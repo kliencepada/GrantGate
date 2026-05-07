@@ -39,7 +39,7 @@
 
         <div class="image-section">
             <div class="green-overlay"></div>
-            </div>
+        </div>
     </main>
 
 </body>
