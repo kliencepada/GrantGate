@@ -94,3 +94,37 @@ nav {
     color: var(--text-gray);
     line-height: 1.6;
 }
+
+.btn-enroll {
+    background-color: var(--dark-bg);
+    color: white;
+    border: none;
+    padding: 15px 35px;
+    border-radius: 8px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.sub-text {
+    margin-top: 25px;
+    font-size: 0.8rem;
+    font-weight: bold;
+    color: var(--primary-green);
+}
+
+.social-icons {
+    margin-top: 30px;
+    display: flex;
+    gap: 15px;
+}
+
+.social-icons span {
+    width: 35px;
+    height: 35px;
+    border: 1px solid var(--primary-green);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--primary-green);
+}
