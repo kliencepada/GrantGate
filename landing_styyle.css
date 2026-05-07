@@ -73,3 +73,24 @@ nav {
     clip-path: ellipse(95% 130% at 0% 50%);
     z-index: 2;
 }
+
+.content {
+    max-width: 500px;
+}
+
+.content h1 {
+    font-size: 4.5rem;
+    font-weight: 900;
+    line-height: 1.1;
+    color: var(--dark-bg);
+}
+
+.green-text {
+    color: var(--primary-green);
+}
+
+.content p {
+    margin: 20px 0;
+    color: var(--text-gray);
+    line-height: 1.6;
+}
