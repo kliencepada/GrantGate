@@ -21,19 +21,24 @@
     /* 2. ANG CARD (HIDDEN ANG NEON SA SUGOD) */
         .card { 
             background: #1e293b; 
-            padding: 2.5rem; 
-            border-radius: 15px; 
-            position: relative; 
-            width: 320px; 
-            color: white; 
-            transition: 0.5s;
-            cursor: pointer;
-            text-align: center;
+    padding: 1rem; 
+    border-radius: 15px; 
+    position: relative; 
+    /* Gamay ra siya sa sugod */
+    width: 150px; 
+    height: 50px;
+    color: white; 
+    transition: 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275); /* Smooth expand effect */
+    cursor: pointer;
+    overflow: hidden; /* Itago ang form sa sugod */
+    display: flex;
+    justify-content: center;
+    align-items: center;
         }
 
         /* Ang "Text" nga makita sa sugod */
         .card::after {
-            content: 'TOUCH TO REGISTER';
+            content: 'REGISTER';
             position: absolute;
             top: 50%; left: 50%;
             transform: translate(-50%, -50%);
@@ -47,7 +52,7 @@
             content: ''; position: absolute; inset: -4px; border-radius: 19px; z-index: -1;
             background: conic-gradient(from var(--angle), transparent, #00ffff, #ff00ff, #00ffff);
             animation: spin 3s linear infinite;
-            opacity: 0;
+            opacity: 1;
             transition: 0.5s;
         }
 
