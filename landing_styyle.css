@@ -17,3 +17,41 @@ body {
     height: 100vh;
     overflow: hidden;
 }
+
+nav {
+    position: absolute;
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 30px 8%;
+    z-index: 100;
+}
+
+.logo {
+    font-size: 1.5rem;
+    color: var(--dark-bg); 
+}
+
+.nav-links {
+    display: flex;
+    list-style: none;
+    gap: 25px;
+}
+
+.nav-links li {
+    color: var(--text-gray);
+    font-size: 0.9rem;
+    cursor: pointer;
+    font-weight: 500;
+}
+
+.btn-reg {
+    background-color: var(--primary-green);
+    color: white;
+    border: none;
+    padding: 10px 25px;
+    border-radius: 25px;
+    font-weight: bold;
+    cursor: pointer;
+}
