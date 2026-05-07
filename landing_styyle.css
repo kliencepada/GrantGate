@@ -1,7 +1,7 @@
-/* landing_style.css */
 :root {
     --primary-green: #00c853;
     --dark-bg: #1a1a1a;
+    --text-gray: #555;
     --white: #ffffff;
 }
 
@@ -9,15 +9,17 @@
     margin: 0;
     padding: 0;
     box-sizing: border-box;
-    font-family: sans-serif;
+    font-family: 'Poppins', sans-serif;
 }
 
 body {
     background-color: var(--dark-bg);
     height: 100vh;
+    width: 100%;
     overflow: hidden;
 }
 
+/* Navigation */
 nav {
     position: absolute;
     width: 100%;
@@ -30,7 +32,7 @@ nav {
 
 .logo {
     font-size: 1.5rem;
-    color: var(--dark-bg); 
+    color: var(--dark-bg);
 }
 
 .nav-links {
@@ -43,7 +45,6 @@ nav {
     color: var(--text-gray);
     font-size: 0.9rem;
     cursor: pointer;
-    font-weight: 500;
 }
 
 .btn-reg {
@@ -56,6 +57,7 @@ nav {
     cursor: pointer;
 }
 
+/* Main Layout */
 .hero {
     display: flex;
     height: 100vh;
@@ -69,7 +71,7 @@ nav {
     display: flex;
     align-items: center;
     padding-left: 8%;
-    /* Ang Magic Curve */
+    /* Curve logic */
     clip-path: ellipse(95% 130% at 0% 50%);
     z-index: 2;
 }
@@ -92,7 +94,6 @@ nav {
 .content p {
     margin: 20px 0;
     color: var(--text-gray);
-    line-height: 1.6;
 }
 
 .btn-enroll {
@@ -105,11 +106,23 @@ nav {
     cursor: pointer;
 }
 
-.sub-text {
-    margin-top: 25px;
-    font-size: 0.8rem;
-    font-weight: bold;
-    color: var(--primary-green);
+/* Image Side */
+.image-section {
+    width: 40%;
+    height: 100%;
+    background-color: var(--dark-bg);
+    /* Sample background para naay makita */
+    background-image: url('https://images.unsplash.com/photo-1523050853063-9158946122b2?auto=format&fit=crop&q=80&w=1000');
+    background-size: cover;
+    background-position: center;
+    position: relative;
+}
+
+.green-overlay {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: rgba(0, 200, 83, 0.2);
 }
 
 .social-icons {
@@ -127,21 +140,4 @@ nav {
     align-items: center;
     justify-content: center;
     color: var(--primary-green);
-}
-
-.image-section {
-    width: 40%;
-    height: 100%;
-    background-color: var(--dark-bg);
-    background-image: url('https://images.unsplash.com/photo-1523050853063-9158946122b2?auto=format&fit=crop&q=80&w=1000'); 
-    background-size: cover;
-    background-position: center;
-    position: relative;
-}
-
-.green-overlay {
-    position: absolute;
-    top: 0; left: 0;
-    width: 100%; height: 100%;
-    background: rgba(0, 200, 83, 0.15);
 }
