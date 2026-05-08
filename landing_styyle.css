@@ -85,7 +85,7 @@ header {
 }
 
 .nav-links li a:hover::before {
-    width: 100%;
+    width: 90%;
     filter: drop-shadow(0 0 15px var(--primary-green)) drop-shadow(0 0 30px var(--primary-green));
 }
 

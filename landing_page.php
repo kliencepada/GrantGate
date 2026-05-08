@@ -233,7 +233,7 @@
     <div class="content-box">
         <h1>Welcome! <span>To GrantGate</span></h1>
         <p>Ready to level up? Start your application today.</p>
-        <button class="btn-main" onclick="toggleAuth()">ENROLL NOW</button>
+        <button class="btn-main" onclick="toggleAuth()">APPLY NOW!</button>
     </div>
 
     <div class="photo-circle">
