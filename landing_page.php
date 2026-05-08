@@ -100,7 +100,9 @@
             <li>About us</li>
             <li>Contact</li>
         </ul>
-        <button class="btn-reg">REGISTRATION</button>
+        <a href="register.php" style="text-decoration: none;">
+    <button class="btn-reg">REGISTRATION</button>
+</a>
     </nav>
 
     <div class="white-bg-layer"></div>
@@ -108,7 +110,9 @@
     <div class="content-box">
         <h1>GranGate <br> </h1>
         <p>Student Application & Admin Dashboard</p>
-        <button class="btn-enroll">ENROLL NOW</button>
+        <a href="register.php" style="text-decoration: none;">
+    <button class="btn-enroll">ENROLL NOW</button>
+</a>
         
         <div class="socials">
             <div class="social-text">NOW OPEN FOR REGISTRATION</div>
