@@ -9,91 +9,104 @@
     <style>
         @property --angle { syntax: "<angle>"; initial-value: 0deg; inherits: false; }
         
+        * { box-sizing: border-box; }
+
         body { 
             background: #0f172a; 
             display: flex; flex-direction: column; justify-content: center; align-items: center; 
-            min-height: 100vh; margin: 0; font-family: 'Poppins', sans-serif; overflow-x: hidden;
+            min-height: 100vh; margin: 0; font-family: 'Poppins', sans-serif; overflow: hidden;
         }
 
         /* BRANDING */
-        .branding { text-align: center; margin-bottom: 30px; }
+        .branding { text-align: center; margin-bottom: 20px; }
         .branding h1 { 
             font-family: 'Orbitron', sans-serif; font-size: 2.5rem; color: #fff; 
             margin: 0; text-shadow: 0 0 15px rgba(0, 255, 255, 0.4); 
         }
         .branding h1 span { color: #00ffff; }
-        .branding p { color: #94a3b8; font-size: 0.9rem; letter-spacing: 2px; text-transform: uppercase; margin-top: 5px; }
 
         /* ALERT POP-UP */
         .alert-message {
             position: absolute; top: 20px; background: #ff00ff; color: white;
             padding: 12px 25px; border-radius: 8px; font-weight: bold;
-            box-shadow: 0 0 20px #ff00ff; z-index: 1000; animation: slideDown 0.5s ease;
-        }
-        @keyframes slideDown { from { opacity: 0; transform: translateY(-50px); } to { opacity: 1; transform: translateY(0); } }
-
-        /* MAIN CONTAINER */
-        .main-container { display: flex; gap: 40px; justify-content: center; align-items: center; width: 100%; }
-
-        /* CARD DESIGN */
-        .card {
-            background: #1e293b; border-radius: 15px; position: relative;
-            width: 180px; height: 70px; transition: 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            cursor: pointer; display: flex; justify-content: center; align-items: center;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5); z-index: 1;
+            box-shadow: 0 0 20px #ff00ff; z-index: 2000; animation: slideDown 0.5s ease;
         }
 
-        /* EXPANDED SIZE */
-        .card:hover { width: 340px; height: 540px; cursor: default; }
+        /* MAIN SLIDING CONTAINER */
+        .container {
+            background: #1e293b; border-radius: 20px; position: relative;
+            width: 800px; max-width: 95%; min-height: 550px;
+            overflow: hidden; box-shadow: 0 15px 35px rgba(0,0,0,0.5);
+        }
 
-        /* NEON SPINNING BORDER */
-        .card::before {
-            content: ''; position: absolute; inset: -3px; border-radius: 18px; z-index: -1;
+        /* NEON BORDER EFFECT */
+        .container::before {
+            content: ''; position: absolute; inset: -2px; border-radius: 22px; z-index: 0;
             background: conic-gradient(from var(--angle), #00ffff 0deg, transparent 90deg, #ff00ff 180deg, transparent 270deg, #00ffff 360deg);
             animation: spin 4s linear infinite;
         }
         @keyframes spin { from { --angle: 0deg; } to { --angle: 360deg; } }
 
-        /* DEAD CENTER TEXT FIX */
-        .hover-text { 
-            font-weight: bold; color: #00ffff; text-shadow: 0 0 10px #00ffff; 
-            letter-spacing: 3px; text-align: center; 
-            position: absolute; /* Gi-absolute para pabilin sa tunga maski naay form */
-            top: 50%; left: 50%; transform: translate(-50%, -50%);
-            transition: 0.3s; pointer-events: none;
+        .inner-content {
+            position: absolute; inset: 4px; background: #1e293b; border-radius: 18px;
+            z-index: 1; overflow: hidden;
         }
-        .card:hover .hover-text { opacity: 0; visibility: hidden; }
 
-        /* FORM STYLING */
-        form { 
-            opacity: 0; width: 100%; padding: 30px; 
-            display: flex; flex-direction: column; align-items: center; 
-            transition: 0.4s; pointer-events: none; box-sizing: border-box;
+        .form-container {
+            position: absolute; top: 0; height: 100%; transition: all 0.6s ease-in-out;
         }
-        .card:hover form { opacity: 1; pointer-events: all; transition-delay: 0.3s; }
 
-        form h2 { color: white; margin-bottom: 25px; text-align: center; font-size: 24px; width: 100%; }
+        /* SIGN IN & SIGN UP LAYOUT */
+        .sign-in-container { left: 0; width: 50%; z-index: 2; }
+        .sign-up-container { left: 0; width: 50%; opacity: 0; z-index: 1; }
 
-        /* INPUT GROUPS */
-        .input-group { position: relative; width: 100%; margin: 12px 0; }
+        .container.right-panel-active .sign-in-container { transform: translateX(100%); opacity: 0; }
+        .container.right-panel-active .sign-up-container { transform: translateX(100%); opacity: 1; z-index: 5; }
+
+        /* OVERLAY SYSTEM */
+        .overlay-container {
+            position: absolute; top: 0; left: 50%; width: 50%; height: 100%;
+            overflow: hidden; transition: transform 0.6s ease-in-out; z-index: 100;
+        }
+        .container.right-panel-active .overlay-container { transform: translateX(-100%); }
+
+        .overlay {
+            background: linear-gradient(135deg, #00ffff, #ff00ff);
+            color: #fff; position: relative; left: -100%; height: 100%; width: 200%;
+            transform: translateX(0); transition: transform 0.6s ease-in-out;
+        }
+        .container.right-panel-active .overlay { transform: translateX(50%); }
+
+        .overlay-panel {
+            position: absolute; display: flex; align-items: center; justify-content: center;
+            flex-direction: column; padding: 0 40px; text-align: center; top: 0; height: 100%; width: 50%;
+            transition: transform 0.6s ease-in-out;
+        }
+        .overlay-left { transform: translateX(-20%); }
+        .container.right-panel-active .overlay-left { transform: translateX(0); }
+        .overlay-right { right: 0; transform: translateX(0); }
+        .container.right-panel-active .overlay-right { transform: translateX(20%); }
+
+        /* FORM ELEMENTS */
+        form { background: #1e293b; display: flex; align-items: center; justify-content: center; flex-direction: column; padding: 0 40px; height: 100%; }
+        h2 { color: white; font-family: 'Orbitron'; margin-bottom: 20px; }
+        
+        .input-group { position: relative; width: 100%; margin: 10px 0; }
         .input-group input { 
-            width: 100%; padding: 14px; background: transparent; border: 1px solid #334155; 
-            border-radius: 10px; color: white; outline: none; box-sizing: border-box;
+            width: 100%; padding: 12px; background: #0f172a; border: 1px solid #334155; 
+            border-radius: 8px; color: white; outline: none; 
         }
-        .input-group label { 
-            position: absolute; left: 14px; top: 50%; transform: translateY(-50%); 
-            color: #94a3b8; transition: 0.3s; background: #1e293b; padding: 0 5px; pointer-events: none;
-        }
-        .input-group input:focus ~ label, .input-group input:valid ~ label { 
-            top: 0; font-size: 12px; color: #00ffff; text-shadow: 0 0 5px #00ffff; 
-        }
+        .input-group label { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #94a3b8; transition: 0.3s; pointer-events: none; font-size: 0.9rem; }
+        .input-group input:focus ~ label, .input-group input:valid ~ label { top: -2px; font-size: 10px; color: #00ffff; background: #1e293b; padding: 0 5px; }
 
         button { 
-            width: 100%; padding: 14px; border-radius: 10px; border: none; 
-            background: #00ffff; color: #0f172a; font-weight: bold; 
-            cursor: pointer; margin-top: 20px; text-transform: uppercase; transition: 0.3s;
+            border-radius: 30px; border: none; background: #00ffff; color: #0f172a; 
+            padding: 12px 40px; font-weight: bold; cursor: pointer; text-transform: uppercase; margin-top: 15px;
+            transition: 0.3s;
         }
-        button:hover { background: #ff00ff; color: white; box-shadow: 0 0 15px #ff00ff; }
+        button:hover { box-shadow: 0 0 15px #00ffff; transform: scale(1.05); }
+        button.ghost { background: transparent; border: 2px solid #fff; color: #fff; margin-top: 20px; }
+        button.ghost:hover { background: #fff; color: #ff00ff; box-shadow: 0 0 15px #fff; }
 
     </style>
 </head>
@@ -105,50 +118,62 @@
 
     <div class="branding">
         <h1>Grant<span>Gate</span></h1>
-        <p>Student Application & Admin Dashboard</p>
     </div>
 
-    <div class="main-container">
-        <div class="card">
-            <div class="hover-text">LOGIN</div>
-            <form action="login_logic.php" method="POST">
-                <h2>Welcome Back</h2>
-                <div class="input-group">
-                    <input type="email" name="email" required>
-                    <label>Email Address</label>
-                </div>
-                <div class="input-group">
-                    <input type="password" name="password" required>
-                    <label>Password</label>
-                </div>
-                <button type="submit" name="login_btn">Login Now</button>
-            </form>
-        </div>
+    <div class="container" id="container">
+        <div class="inner-content">
+            
+            <div class="form-container sign-up-container">
+                <form action="register_logic.php" method="POST">
+                    <h2>Create Account</h2>
+                    <div class="input-group"><input type="text" name="name" required><label>Full Name</label></div>
+                    <div class="input-group"><input type="text" name="school" required><label>School</label></div>
+                    <div class="input-group"><input type="email" name="email" required><label>Email Address</label></div>
+                    <div class="input-group"><input type="password" name="password" required><label>Password</label></div>
+                    <button type="submit" name="register_btn">Sign Up</button>
+                </form>
+            </div>
 
-        <div class="card">
-            <div class="hover-text">REGISTER</div>
-            <form action="register_logic.php" method="POST">
-                <h2>Create Account</h2>
-                <div class="input-group">
-                    <input type="text" name="name" required>
-                    <label>Full Name</label>
+            <div class="form-container sign-in-container">
+                <form action="login_logic.php" method="POST">
+                    <h2>Welcome Back</h2>
+                    <div class="input-group"><input type="email" name="email" required><label>Email Address</label></div>
+                    <div class="input-group"><input type="password" name="password" required><label>Password</label></div>
+                    <button type="submit" name="login_btn">Login Now</button>
+                </form>
+            </div>
+
+            <div class="overlay-container">
+                <div class="overlay">
+                    <div class="overlay-panel overlay-left">
+                        <h2>Already a Member?</h2>
+                        <p>Login to access your dashboard</p>
+                        <button class="ghost" id="signIn">Sign In</button>
+                    </div>
+                    <div class="overlay-panel overlay-right">
+                        <h2>New Here?</h2>
+                        <p>Register and start your application today</p>
+                        <button class="ghost" id="signUp">Sign Up</button>
+                    </div>
                 </div>
-                <div class="input-group">
-                    <input type="text" name="school" required>
-                    <label>School</label>
-                </div>
-                <div class="input-group">
-                    <input type="email" name="email" required>
-                    <label>Email Address</label>
-                </div>
-                <div class="input-group">
-                    <input type="password" name="password" required>
-                    <label>Password</label>
-                </div>
-                <button type="submit" name="register_btn">Sign Up</button>
-            </form>
+            </div>
+
         </div>
     </div>
+
+    <script>
+        const signUpButton = document.getElementById('signUp');
+        const signInButton = document.getElementById('signIn');
+        const container = document.getElementById('container');
+
+        signUpButton.addEventListener('click', () => {
+            container.classList.add("right-panel-active");
+        });
+
+        signInButton.addEventListener('click', () => {
+            container.classList.remove("right-panel-active");
+        });
+    </script>
 
 </body>
 </html>
