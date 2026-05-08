@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GranGate | Official Admission</title>
+    <title>GrantGate | Official Admission</title>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Poppins:wght@300;400;600;800&display=swap" rel="stylesheet">
     <style>
         :root { --primary-green: #00c853; --dark-bg: #0f172a; }
@@ -17,6 +17,8 @@
         nav { position: absolute; top: 0; width: 100%; display: flex; justify-content: space-between; align-items: center; padding: 40px 8%; z-index: 100; transition: 0.5s; }
         .logo { font-family: 'Orbitron'; font-size: 1.8rem; font-weight: 900; letter-spacing: 2px; color: white; }
         .logo span { color: var(--primary-green); }
+
+        
 
         .white-bg-layer { 
             position: absolute; background: #ffffff; width: 195vh; height: 200vh; border-radius: 50%; 
@@ -33,7 +35,7 @@
 
         .photo-circle { 
             position: absolute; right: -2%; top: 80%; transform: translateY(-50%); 
-            width: 90vh; height: 90vh; border-radius: 50%; background: var(--primary-green); 
+            width: 100vh; height: 100vh; border-radius: 50%; background: var(--primary-green); 
             z-index: 2; border: 20px solid var(--dark-bg); transition: 0.8s; 
 
             background-image: url('library.png');
@@ -68,7 +70,7 @@
 
 /* Mao ni ang image sa tuo */
 .pic-right {
-    height: 185% !important; /* Gidak-on */
+    height: 190% !important; /* Gidak-on */
     left: 70% !important;   /* Isbog sa tuo (Usba ni para mo-isbog) */
     transform: translateX(-50%);
     z-index: 9;              /* Naa sa luyo gamay */
@@ -93,7 +95,7 @@
 
         /* --- SLIDING FORM CONTAINER --- */
         .container {
-            background: #1e293b; border-radius: 25px; position: relative;
+            background: #52698f; border-radius: 25px; position: relative;
             width: 900px; min-height: 580px; overflow: hidden;
             box-shadow: 0 25px 50px rgba(0,0,0,0.6);
         }
@@ -104,7 +106,7 @@
         }
         @keyframes spin { from { --angle: 0deg; } to { --angle: 360deg; } }
 
-        .inner { position: absolute; inset: 5px; background: #111827; border-radius: 22px; z-index: 1; overflow: hidden; }
+        .inner { position: absolute; inset: 5px; background: #58698f; border-radius: 22px; z-index: 1; overflow: hidden; }
 
         .form-container { position: absolute; top: 0; height: 100%; transition: all 0.6s ease-in-out; width: 50%; }
         .sign-in { left: 0; z-index: 2; }
@@ -151,34 +153,54 @@
 </head>
 <body id="mainBody">
 
-    <nav><div class="logo">GRAN<span>GATE</span></div></nav>
+
+
+    <nav><div class="logo">GRANT<span>GATE</span></div></nav>
     <div class="white-bg-layer"></div>
 
     <div class="content-box">
-        <h1>Welcome! <span>To GranGate</span></h1>
-        <p>Student Application & Admin Dashboard</p>
+        <h1>Welcome! <span>To GrantGate</span></h1>
+        <p>Ready to level up? Start your application today.</p>
         <button class="btn-main" onclick="toggleAuth()">ENROLL NOW</button>
     </div>
 
     <div class="photo-circle">
     <img src="james.png" class="overlap-img pic-left">
-    <img src="jnes.png" class="overlap-img pic-right">
+    <img src="nes.png" class="overlap-img pic-right">
 </div>
 
     <div class="auth-master-wrapper">
         <div class="container" id="container">
             <div class="close-btn" onclick="toggleAuth()">✕ CLOSE</div>
             <div class="inner">
+
+
                 
                 <div class="form-container sign-up">
-                    <form action="register_logic.php" method="POST">
-                        <h2 style="font-family:'Orbitron'; margin-bottom:20px;">Create Account</h2>
-                        <div class="input-group"><input type="text" name="name" required><label>Full Name</label></div>
-                        <div class="input-group"><input type="email" name="email" required><label>Email Address</label></div>
-                        <div class="input-group"><input type="password" name="password" required><label>Password</label></div>
-                        <button type="submit" name="register_btn" class="btn-main" style="border-radius:50px;">Sign Up</button>
-                    </form>
-                </div>
+    <form action="register_logic.php" method="POST">
+        <h2 style="font-family:'Orbitron'; margin-bottom:20px;">Create Account</h2>
+        
+        <div class="input-group">
+            <input type="text" name="name" required>
+            <label>Full Name</label>
+        </div>
+        
+        <div class="input-group">
+            <input type="email" name="email" required>
+            <label>Email Address</label>
+        </div>
+        
+        <div class="input-group">
+            <input type="password" name="password" required>
+            <label>Password</label>
+        </div>
+        
+        <button type="submit" name="register_btn" class="btn-main" style="border-radius:50px;">Sign Up</button>
+    </form>
+</div>
+
+
+
 
                 <div class="form-container sign-in">
                     <form action="login_logic.php" method="POST">
@@ -219,5 +241,76 @@
         signUpBtn.addEventListener('click', () => { container.classList.add("right-panel-active"); });
         signInBtn.addEventListener('click', () => { container.classList.remove("right-panel-active"); });
     </script>
+
+  
+
+
+
+
+
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<style>
+    /* Kini ang mopa-vertical ug mopa-gamay sa box bisag dili 'toast' mode */
+    .swal2-popup-custom {
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: center !important;
+        padding: 15px !important;
+        border-radius: 15px !important;
+        background: #1a1d24 !important; /* Dark theme */
+        width: 300px !important; /* Sigurado nga gamay ra siya */
+    }
+    
+    .swal2-title-custom {
+        margin: 15px 0 !important;
+        font-family: 'Poppins', sans-serif;
+        font-size: 16px !important;
+        color: #ffffff !important;
+        text-align: center !important;
+    }
+
+    /* Mopa-dark sa background para klaro nga dili ka-tuplok sa luyo */
+    .swal2-backdrop-custom {
+        background: rgba(0,0,0,0.5) !important;
+        backdrop-filter: blur(2px); /* Optional: pakuratan gamay ang luyo */
+    }
+</style>
+
+<?php
+if (isset($_SESSION['status'])) {
+    $status_text = $_SESSION['status'];
+    $status_code = $_SESSION['status_code']; 
+?>
+    <script>
+        Swal.fire({
+            // WALA nay 'toast: true' para ma-lock ang screen
+            icon: "<?php echo $status_code; ?>",
+            title: "<?php echo $status_text; ?>",
+            
+            showConfirmButton: true,
+            confirmButtonText: 'OK',
+            confirmButtonColor: '#00c853',
+            
+            // SECURITY SETTINGS: Dili gyod maka-ikyas ang user
+            allowOutsideClick: false, // Dili mawala kung i-click sa gawas
+            allowEscapeKey: false,    // Dili mawala kung pisliton ang Esc
+            allowEnterKey: true,      // Pwede i-enter para mawala
+            
+            customClass: {
+                popup: 'swal2-popup-custom',
+                title: 'swal2-title-custom',
+                container: 'swal2-backdrop-custom'
+            }
+        });
+    </script>
+<?php
+    unset($_SESSION['status']);
+    unset($_SESSION['status_code']);
+}
+?>
+
+
 </body>
 </html>
