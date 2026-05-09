@@ -117,13 +117,12 @@
             50% { opacity: 0.3; }
         }
 
-        /* Heading — reset ALL spans to inline first */
+        /* Heading */
         .content-box h1 { 
             font-size: 4.5rem; font-weight: 800; line-height: 1.05; 
             color: #111; text-transform: uppercase; margin-bottom: 8px;
         }
 
-        /* FIX: only the green LINE wrapper gets display:block, not individual letters */
         .content-box h1 .line-green {
             color: var(--green); display: block; font-size: 3.8rem;
         }
@@ -184,11 +183,9 @@
 
         .cta-btn:active { transform: translateY(0) scale(0.97) !important; }
 
-        /* Pulsing glow ring on button */
         .cta-btn::before {
             content: ''; position: absolute; inset: -3px;
-            border-radius: 14px;
-            background: var(--green);
+            border-radius: 14px; background: var(--green);
             opacity: 0; z-index: -1;
             animation: pulseGlow 2.5s ease-in-out infinite;
         }
@@ -198,7 +195,6 @@
             50% { opacity: 0.3; transform: scale(1.06); }
         }
 
-        /* Shine sweep on button */
         .cta-btn::after {
             content: ''; position: absolute;
             top: 0; left: -100%; width: 60%; height: 100%;
@@ -212,13 +208,8 @@
             100% { left: 150%; }
         }
 
-        .cta-btn i {
-            transition: transform 0.3s;
-        }
-
-        .cta-btn:hover i {
-            transform: translateX(4px);
-        }
+        .cta-btn i { transition: transform 0.3s; }
+        .cta-btn:hover i { transform: translateX(4px); }
 
         /* Stats row */
         .stats-row {
@@ -255,18 +246,15 @@
             to { opacity: 1; transform: translateY(-50%) scale(1); }
         }
 
-        /* Green glow ring around photo circle */
         .photo-circle::before {
             content: ''; position: absolute; inset: -25px;
-            border-radius: 50%;
-            border: 2px solid rgba(0, 200, 83, 0.15);
+            border-radius: 50%; border: 2px solid rgba(0, 200, 83, 0.15);
             animation: ringPulse 3s ease-in-out infinite;
         }
 
         .photo-circle::after {
             content: ''; position: absolute; inset: -45px;
-            border-radius: 50%;
-            border: 1px solid rgba(0, 200, 83, 0.08);
+            border-radius: 50%; border: 1px solid rgba(0, 200, 83, 0.08);
             animation: ringPulse 3s 0.8s ease-in-out infinite;
         }
 
@@ -294,17 +282,14 @@
 
         .scroll-mouse {
             width: 22px; height: 34px;
-            border: 2px solid rgba(0,0,0,0.2);
-            border-radius: 12px;
-            position: relative;
+            border: 2px solid rgba(0,0,0,0.2); border-radius: 12px; position: relative;
         }
 
         .scroll-mouse::before {
             content: ''; position: absolute;
             top: 6px; left: 50%; transform: translateX(-50%);
             width: 3px; height: 8px; border-radius: 3px;
-            background: var(--green);
-            animation: scrollDot 1.8s ease-in-out infinite;
+            background: var(--green); animation: scrollDot 1.8s ease-in-out infinite;
         }
 
         @keyframes scrollDot {
@@ -320,8 +305,7 @@
         
         .team-container { 
             display: flex; gap: 50px; z-index: 10; width: 100%; 
-            justify-content: center; 
-            align-items: flex-end;
+            justify-content: center; align-items: flex-end;
             transition: 0.8s ease-in-out; 
             height: 100%; padding-bottom: 20px;
         }
@@ -336,21 +320,15 @@
         }
 
         .about-text-center {
-            text-align: center;
-            margin-bottom: 120px;
-            z-index: 5;
-            transition: 0.5s;
-            flex-shrink: 0;
+            text-align: center; margin-bottom: 120px;
+            z-index: 5; transition: 0.5s; flex-shrink: 0;
         }
 
         .expanded .member-card:not(.active) { opacity: 0; transform: scale(0); pointer-events: none; position: absolute; }
         .expanded .about-text-center { display: none; }
 
         .member-card.active { display: flex; align-items: center; justify-content: flex-start; width: 100%; position: relative; left: 0; }
-        .member-card.active img { 
-            height: 90vh !important; 
-            filter: drop-shadow(0 0 30px var(--green));
-        }
+        .member-card.active img { height: 90vh !important; filter: drop-shadow(0 0 30px var(--green)); }
 
         .member-info { display: none; text-align: left; margin-left: 60px; max-width: 600px; }
         .member-card.active .member-info { display: block; animation: fadeIn 0.5s forwards; }
@@ -394,9 +372,7 @@
             opacity: 0; transform: translateY(40px);
             transition: all 0.8s cubic-bezier(0.22, 1, 0.36, 1);
         }
-        .reveal.visible {
-            opacity: 1; transform: translateY(0);
-        }
+        .reveal.visible { opacity: 1; transform: translateY(0); }
 
         /* Responsive */
         @media (max-width: 900px) {
@@ -432,20 +408,15 @@
 
     <section id="home">
         <div class="white-bg-layer"></div>
-
-        <!-- Floating particles inside the white area -->
         <div class="home-particles" id="homeParticles"></div>
 
         <div class="content-box">
-            <!-- Label badge -->
             <div class="content-label">
                 <i class="fas fa-circle"></i> Official Scholarship Portal
             </div>
 
-            <!-- Animated heading — HTML is built by JS -->
             <h1 id="mainHeading"></h1>
 
-            <!-- Green accent line -->
             <div class="heading-accent"></div>
 
             <p class="subtitle">Ready to level up? Access scholarship opportunities, submit applications, and track your status — all in one place.</p>
@@ -454,7 +425,6 @@
                 APPLY NOW <i class="fas fa-arrow-right"></i>
             </a>
 
-            <!-- Stats -->
             <div class="stats-row">
                 <div class="stat-item">
                     <div class="stat-num"><span class="gn">500</span>+</div>
@@ -476,7 +446,6 @@
             <img src="janes.png" class="overlap-img pic-right">
         </div>
 
-        <!-- Scroll indicator -->
         <div class="scroll-indicator">
             <span>Scroll</span>
             <div class="scroll-mouse"></div>
@@ -529,20 +498,15 @@
     </section>
 
     <script>
-        /* ========================================
-           LETTER-BY-LETTER HEADING REVEAL
-           (Fixed: uses .rl class with !important 
-            so .content-box h1 span can't override)
-        ======================================== */
+        /* LETTER-BY-LETTER HEADING REVEAL */
         (function animateHeading() {
             const heading = document.getElementById('mainHeading');
             const line1 = 'Welcome!';
             const line2 = 'To GrantGate';
 
             let html = '';
-            let delay = 0.5; // starting delay in seconds
+            let delay = 0.5;
 
-            // Line 1: black text
             for (let i = 0; i < line1.length; i++) {
                 const ch = line1[i];
                 if (ch === ' ') {
@@ -553,7 +517,6 @@
                 }
             }
 
-            // Line break — the green line is a separate block
             html += '<span class="line-green">';
             for (let i = 0; i < line2.length; i++) {
                 const ch = line2[i];
@@ -569,9 +532,7 @@
             heading.innerHTML = html;
         })();
 
-        /* ========================================
-           HOME PARTICLES
-        ======================================== */
+        /* HOME PARTICLES */
         (function initHomeParticles() {
             const layer = document.getElementById('homeParticles');
             const count = 20;
@@ -589,23 +550,16 @@
             }
         })();
 
-        /* ========================================
-           SCROLL REVEAL
-        ======================================== */
+        /* SCROLL REVEAL */
         const revealEls = document.querySelectorAll('.reveal');
         const observer = new IntersectionObserver((entries) => {
             entries.forEach(entry => {
-                if (entry.isIntersecting) {
-                    entry.target.classList.add('visible');
-                }
+                if (entry.isIntersecting) entry.target.classList.add('visible');
             });
         }, { threshold: 0.15 });
-
         revealEls.forEach(el => observer.observe(el));
 
-        /* ========================================
-           ABOUT SECTION — expand / collapse
-        ======================================== */
+        /* ABOUT SECTION — expand / collapse */
         function expandMember(element) {
             const teamBox = document.getElementById('teamBox');
             if (!teamBox.classList.contains('expanded')) {
@@ -622,9 +576,7 @@
             cards.forEach(card => card.classList.remove('active'));
         }
 
-        /* ========================================
-           ACTIVE NAV LINK on scroll
-        ======================================== */
+        /* ACTIVE NAV LINK on scroll */
         const sections = document.querySelectorAll('section');
         const navLinks = document.querySelectorAll('.nav-links li a');
 
@@ -636,9 +588,7 @@
             });
             navLinks.forEach(link => {
                 link.classList.remove('active');
-                if (link.getAttribute('href') === '#' + current) {
-                    link.classList.add('active');
-                }
+                if (link.getAttribute('href') === '#' + current) link.classList.add('active');
             });
         });
     </script>
