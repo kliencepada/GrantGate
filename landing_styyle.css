@@ -1,0 +1,178 @@
+:root {
+    --primary-green: #00c853;
+    --dark-bg: #0f172a; /* Medyo gi-deep blue/dark nako gamay para mas nindot ang glow */
+    --text-gray: #555;
+    --white: #ffffff;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Poppins', sans-serif;
+}
+
+body {
+    background-color: var(--dark-bg);
+    height: 100vh;
+    width: 100%;
+    overflow: hidden;
+    position: relative;
+}
+
+/* --- NAVIGATION HEADER --- */
+header {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    padding: 30px 8%;
+    z-index: 10000;
+}
+
+/* Logo sa left side */
+.logo {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 1.8rem;
+    font-weight: 900;
+    color: #fff;
+    position: absolute;
+    left: 8%;
+}
+
+.logo span {
+    color: var(--primary-green);
+}
+
+/* Navigation sa TUNGA */
+.navbar {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+}
+
+.nav-links {
+    display: flex;
+    list-style: none;
+    gap: 60px; /* Distansya sa links */
+}
+
+/* Glow Animation Setup */
+.nav-links li a {
+    position: relative;
+    font-size: 1.1rem;
+    text-decoration: none;
+    color: transparent; /* Outline mode */
+    -webkit-text-stroke: 1px rgba(255, 255, 255, 0.5);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    transition: 0.5s;
+}
+
+.nav-links li a::before {
+    content: attr(data-text);
+    position: absolute;
+    color: var(--primary-green);
+    width: 0;
+    overflow: hidden;
+    transition: 0.5s;
+    border-right: 2px solid var(--primary-green);
+    -webkit-text-stroke: 1px var(--primary-green);
+    white-space: nowrap;
+}
+
+.nav-links li a:hover::before {
+    width: 90%;
+    filter: drop-shadow(0 0 15px var(--primary-green)) drop-shadow(0 0 30px var(--primary-green));
+}
+
+/* --- MAIN LAYOUT --- */
+.hero {
+    display: flex;
+    height: 100vh;
+    width: 100%;
+}
+
+.white-section {
+    background-color: var(--white);
+    width: 60%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    padding-left: 8%;
+    /* Curve logic nimo */
+    clip-path: ellipse(95% 130% at 0% 50%);
+    z-index: 2;
+    position: relative;
+}
+
+.content {
+    max-width: 550px;
+}
+
+.content h1 {
+    font-size: 4.5rem;
+    font-weight: 900;
+    line-height: 1.1;
+    color: #111;
+}
+
+.green-text {
+    color: var(--primary-green);
+}
+
+.content p {
+    margin: 25px 0;
+    color: var(--text-gray);
+    font-size: 1.1rem;
+}
+
+.btn-enroll {
+    background-color: var(--primary-green);
+    color: white;
+    border: none;
+    padding: 18px 45px;
+    border-radius: 12px;
+    font-weight: bold;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+.btn-enroll:hover {
+    background-color: #00a944;
+    transform: translateY(-3px);
+    box-shadow: 0 10px 20px rgba(0, 200, 83, 0.3);
+}
+
+/* --- IMAGE SECTION --- */
+.image-section {
+    width: 40%;
+    height: 100%;
+    background-color: var(--dark-bg);
+    position: relative;
+    z-index: 1;
+}
+
+/* Para sa overlap images nila James ug Nes */
+.photo-container {
+    position: absolute;
+    bottom: 0;
+    right: 5%;
+    display: flex;
+    align-items: flex-end;
+}
+
+.pic-left {
+    width: 350px;
+    z-index: 5;
+    margin-right: -100px; /* Overlap effect */
+}
+
+.pic-right {
+    width: 320px;
+    z-index: 4;
+}

@@ -1,12 +1,12 @@
 <?php
-$sname = "localhost";
-$uname = "root";
+$servername = "localhost";
+$username = "root";
 $password = "";
-$db_name = "grantgate_db"; // Mao ni inyong gamiton sa phpMyAdmin
+$dbname = "grantgate_db"; // Gi-match sa imong phpMyAdmin (image_2b3fdb.jpg)
 
-$conn = mysqli_connect($sname, $uname, $password, $db_name);
+$con = mysqli_connect($servername, $username, $password, $dbname);
 
-if (!$conn) {
+if (!$con) {
     die("Connection failed: " . mysqli_connect_error());
 }
 ?>
