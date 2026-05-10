@@ -1,4 +1,102 @@
-<?php session_start(); ?>
+<?php
+session_start();
+require_once 'db_conn.php';
+
+// Redirect to login if not logged in
+if (!isset($_SESSION['user_id'])) {
+    header('Location: register.php');
+    exit;
+}
+
+ $user_id = $_SESSION['user_id'];
+
+// Handle Logout
+if (isset($_GET['logout'])) {
+    session_destroy();
+    header('Location: register.php');
+    exit;
+}
+
+// Handle AJAX Requests
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
+    header('Content-Type: application/json');
+    $action = $_POST['action'];
+
+    try {
+        // SAVE PERSONAL INFO
+        if ($action === 'save_personal_info') {
+            $fields = [
+                'firstname', 'lastname', 'birthday', 'gender', 'contact_no', 
+                'email_add', 'home_address', 'guardian_fullname', 'guardian_contact_no', 
+                'occupation', 'income', 'school', 'year_level', 'course', 'gwa'
+            ];
+            $data = [];
+            foreach ($fields as $f) $data[$f] = trim($_POST[$f] ?? '');
+
+            // Check if user already has a record to UPDATE, otherwise INSERT
+            $check = $pdo->prepare("SELECT info_id FROM tbl_personal_info WHERE user_id = ?");
+            $check->execute([$user_id]);
+
+            if ($check->fetch()) {
+                $setClause = implode('=?, ', $fields) . '=?';
+                $stmt = $pdo->prepare("UPDATE tbl_personal_info SET $setClause WHERE user_id=?");
+                $values = array_values($data);
+                $values[] = $user_id;
+                $stmt->execute($values);
+            } else {
+                $cols = 'user_id, ' . implode(', ', $fields);
+                $placeholders = '?, ' . implode(', ', array_fill(0, count($fields), '?'));
+                $stmt = $pdo->prepare("INSERT INTO tbl_personal_info ($cols) VALUES ($placeholders)");
+                $values = array_values($data);
+                array_unshift($values, $user_id);
+                $stmt->execute($values);
+            }
+            echo json_encode(['status' => 'success', 'message' => 'Personal information saved!']);
+            exit;
+        }
+
+        // UPLOAD REQUIREMENTS
+        if ($action === 'upload_requirement') {
+            if (!isset($_FILES['file']) || $_FILES['file']['error'] !== UPLOAD_ERR_OK) {
+                echo json_encode(['status' => 'error', 'message' => 'No file uploaded or upload error.']);
+                exit;
+            }
+
+            $file = $_FILES['file'];
+            $maxSize = 5 * 1024 * 1024; // 5MB
+            if ($file['size'] > $maxSize) {
+                echo json_encode(['status' => 'error', 'message' => 'File too large. Max 5MB.']);
+                exit;
+            }
+
+            $allowed = ['pdf', 'jpg', 'jpeg', 'png'];
+            $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+            if (!in_array($ext, $allowed)) {
+                echo json_encode(['status' => 'error', 'message' => 'Invalid file type.']);
+                exit;
+            }
+
+            $uploadDir = 'requirements/';
+            if (!is_dir($uploadDir)) mkdir($uploadDir, 0777, true);
+
+            $newFileName = uniqid() . '_' . $user_id . '.' . $ext;
+            $filePath = $uploadDir . $newFileName;
+
+            if (move_uploaded_file($file['tmp_name'], $filePath)) {
+                $stmt = $pdo->prepare("INSERT INTO tbl_requirements (user_id, file_name, file_path, file_size, uploaded_at) VALUES (?, ?, ?, ?, NOW())");
+                $stmt->execute([$user_id, $file['name'], $filePath, $file['size']]);
+                echo json_encode(['status' => 'success', 'message' => 'File uploaded successfully!']);
+            } else {
+                echo json_encode(['status' => 'error', 'message' => 'Failed to move file.']);
+            }
+            exit;
+        }
+    } catch (Exception $e) {
+        echo json_encode(['status' => 'error', 'message' => 'DB Error: ' . $e->getMessage()]);
+        exit;
+    }
+}
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -222,10 +320,10 @@
         <div class="topbar-logo">GRANT<span>GATE</span></div>
         <div class="topbar-right">
             <div class="topbar-user">
-                <div class="topbar-avatar">JS</div>
-                <span>John Student</span>
+                <div class="topbar-avatar"><?= strtoupper(substr($_SESSION['firstname'] ?? 'U', 0, 1)) ?></div>
+                <span><?= htmlspecialchars(($_SESSION['firstname'] ?? '') . ' ' . ($_SESSION['lastname'] ?? '')) ?></span>
             </div>
-            <a href="register.php" class="logout-btn"><i class="fas fa-sign-out-alt"></i> Logout</a>
+            <a href="dashboard.php?logout=true" class="logout-btn"><i class="fas fa-sign-out-alt"></i> Logout</a>
         </div>
     </div>
 
@@ -273,21 +371,21 @@
                 <div class="form-row">
                     <div class="field">
                         <label>First Name</label>
-                        <input type="text" id="fname" placeholder="Enter first name">
+                        <input type="text" id="fname" name="firstname" placeholder="Enter first name">
                     </div>
                     <div class="field">
                         <label>Last Name</label>
-                        <input type="text" id="lname" placeholder="Enter last name">
+                        <input type="text" id="lname" name="lastname" placeholder="Enter last name">
                     </div>
                 </div>
                 <div class="form-row">
                     <div class="field">
                         <label>Date of Birth</label>
-                        <input type="date" id="dob">
+                        <input type="date" id="dob" name="birthday">
                     </div>
                     <div class="field">
                         <label>Gender</label>
-                        <select id="gender">
+                        <select id="gender" name="gender">
                             <option value="">Select gender</option>
                             <option>Male</option>
                             <option>Female</option>
@@ -297,17 +395,17 @@
                 <div class="form-row">
                     <div class="field">
                         <label>Contact Number</label>
-                        <input type="tel" id="phone" placeholder="+63 9XX XXX XXXX">
+                        <input type="tel" id="phone" name="contact_no" placeholder="+63 9XX XXX XXXX">
                     </div>
                     <div class="field">
                         <label>Email Address</label>
-                        <input type="email" id="email" placeholder="student@email.com">
+                        <input type="email" id="email" name="email_add" placeholder="student@email.com">
                     </div>
                 </div>
                 <div class="form-row full">
                     <div class="field">
                         <label>Home Address</label>
-                        <input type="text" id="address" placeholder="Complete address">
+                        <input type="text" id="address" name="home_address" placeholder="Complete address">
                     </div>
                 </div>
             </div>
@@ -317,21 +415,21 @@
                 <div class="form-row">
                     <div class="field">
                         <label>Parent/Guardian Name</label>
-                        <input type="text" id="parentName" placeholder="Full name">
+                        <input type="text" id="parentName" name="guardian_fullname" placeholder="Full name">
                     </div>
                     <div class="field">
                         <label>Contact Number</label>
-                        <input type="tel" id="parentPhone" placeholder="+63 9XX XXX XXXX">
+                        <input type="tel" id="parentPhone" name="guardian_contact_no" placeholder="+63 9XX XXX XXXX">
                     </div>
                 </div>
                 <div class="form-row">
                     <div class="field">
                         <label>Occupation</label>
-                        <input type="text" id="occupation" placeholder="e.g. Farmer, Teacher">
+                        <input type="text" id="occupation" name="occupation" placeholder="e.g. Farmer, Teacher">
                     </div>
                     <div class="field">
                         <label>Estimated Annual Income</label>
-                        <select id="income">
+                        <select id="income" name="income">
                             <option value="">Select range</option>
                             <option>Below ₱100,000</option>
                             <option>₱100,000 - ₱250,000</option>
@@ -347,11 +445,11 @@
                 <div class="form-row">
                     <div class="field">
                         <label>School / University</label>
-                        <input type="text" id="school" placeholder="Current school name">
+                        <input type="text" id="school" name="school" placeholder="Current school name">
                     </div>
                     <div class="field">
                         <label>Year Level</label>
-                        <select id="yearLevel">
+                        <select id="yearLevel" name="year_level">
                             <option value="">Select year</option>
                             <option>1st Year</option>
                             <option>2nd Year</option>
@@ -363,11 +461,11 @@
                 <div class="form-row">
                     <div class="field">
                         <label>Course / Program</label>
-                        <input type="text" id="course" placeholder="e.g. BSIT, BSED">
+                        <input type="text" id="course" name="course" placeholder="e.g. BSIT, BSED">
                     </div>
                     <div class="field">
                         <label>GWA (Previous Semester)</label>
-                        <input type="text" id="gwa" placeholder="e.g. 1.50">
+                        <input type="text" id="gwa" name="gwa" placeholder="e.g. 1.50">
                     </div>
                 </div>
             </div>
@@ -507,13 +605,50 @@
             updateUI();
         }
 
-        function nextStep(step) {
-            completedSteps.add(currentStep);
-            currentStep = step;
-            updateUI();
-            if (step === 3) buildSummary();
-            showToast('Step ' + (step - 1) + ' completed!', 'success');
+        async function nextStep(step) {
+    if (step === 2) {
+        // Save personal info to database first
+        const btn = document.querySelector('#step1 .btn-primary');
+        btn.innerHTML = 'Saving... <i class="fas fa-spinner fa-spin"></i>';
+        btn.disabled = true;
+
+        const data = new URLSearchParams();
+        data.append('action', 'save_personal_info');
+        
+        // Collect inputs by their name attribute
+        document.querySelectorAll('#step1 input, #step1 select').forEach(el => {
+            if (el.name) data.append(el.name, el.value);
+        });
+
+        try {
+            const res = await fetch('dashboard.php', { method: 'POST', body: data });
+            const json = await res.json();
+            if (json.status === 'success') {
+                completedSteps.add(currentStep);
+                currentStep = step;
+                updateUI();
+                showToast(json.message, 'success');
+            } else {
+                showToast(json.message || 'Failed to save info.', 'error');
+                return; // Stop from moving to next step
+            }
+        } catch(e) {
+            showToast('Network error. Failed to save info.', 'error');
+            return;
         }
+        
+        btn.innerHTML = 'Next Step <i class="fas fa-arrow-right"></i>';
+        btn.disabled = false;
+        return;
+    }
+
+    // Default behavior for other steps
+    completedSteps.add(currentStep);
+    currentStep = step;
+    updateUI();
+    if (step === 3) buildSummary();
+    showToast('Step ' + (step - 1) + ' completed!', 'success');
+}
 
         function updateUI() {
             /* Panels */
@@ -579,23 +714,44 @@
         }
 
         /* ===== FILE UPLOAD ===== */
-        function handleUpload(input, listId) {
-            const list = document.getElementById(listId);
-            const file = input.files[0];
-            if (!file) return;
-            if (file.size > 5 * 1024 * 1024) {
-                showToast('File too large. Max 5MB.', 'error');
-                return;
-            }
-            const item = document.createElement('div');
-            item.className = 'upload-item';
-            item.innerHTML =
-                '<div class="upload-item-info"><i class="fas fa-file"></i><span>' + file.name + '</span><span style="color:var(--muted);font-size:11px">(' + (file.size / 1024).toFixed(0) + ' KB)</span></div>' +
-                '<button class="upload-item-remove" onclick="this.parentElement.remove()"><i class="fas fa-times"></i></button>';
-            list.appendChild(item);
-            input.value = '';
+        async function handleUpload(input, listId) {
+    const list = document.getElementById(listId);
+    const file = input.files[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) {
+        showToast('File too large. Max 5MB.', 'error');
+        return;
+    }
+
+    // Show loading state in UI
+    const item = document.createElement('div');
+    item.className = 'upload-item';
+    item.innerHTML = '<div class="upload-item-info"><i class="fas fa-spinner fa-spin" style="color:var(--green)"></i><span>Uploading ' + file.name + '...</span></div>';
+    list.appendChild(item);
+
+    // Send to backend
+    const formData = new FormData();
+    formData.append('action', 'upload_requirement');
+    formData.append('file', file);
+
+    try {
+        const res = await fetch('dashboard.php', { method: 'POST', body: formData });
+        const json = await res.json();
+        
+        if (json.status === 'success') {
+            item.innerHTML = '<div class="upload-item-info"><i class="fas fa-file"></i><span>' + file.name + '</span><span style="color:var(--muted);font-size:11px">(' + (file.size / 1024).toFixed(0) + ' KB)</span></div><button class="upload-item-remove" onclick="this.parentElement.remove()"><i class="fas fa-times"></i></button>';
             showToast('File uploaded: ' + file.name, 'success');
+        } else {
+            item.remove(); // Remove loading item if failed
+            showToast(json.message || 'Upload failed.', 'error');
         }
+    } catch(e) {
+        item.remove();
+        showToast('Network error during upload.', 'error');
+    }
+    
+    input.value = ''; // Reset file input
+}
 
         /* ===== TOAST ===== */
         function showToast(msg, type) {
