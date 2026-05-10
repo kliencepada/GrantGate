@@ -21,6 +21,7 @@ if (isset($_GET['logout'])) {
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
     header('Content-Type: application/json');
     $action = $_POST['action'];
+    $user_id = $_SESSION['user_id']; // <-- ADD THIS LINE HERE
 
     try {
         // SAVE PERSONAL INFO
