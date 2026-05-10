@@ -1,4 +1,68 @@
-<?php session_start(); ?>
+<?php 
+session_start(); 
+require_once 'db_conn.php';
+
+// ===== BACKEND LOGIC FOR AJAX =====
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
+    header('Content-Type: application/json');
+    $action = $_POST['action'];
+
+    try {
+        if ($action === 'login') {
+            $email = trim($_POST['email'] ?? '');
+            $password = $_POST['password'] ?? '';
+
+            $stmt = $pdo->prepare("SELECT * FROM tbl_users WHERE email = ?");
+            $stmt->execute([$email]);
+            $user = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            if ($user && $user['password'] === $password) { // No hashing as requested
+                $_SESSION['user_id'] = $user['user_id'];
+                $_SESSION['firstname'] = $user['firstname'] ?? '';
+                $_SESSION['lastname'] = $user['lastname'] ?? '';
+                echo json_encode(['status' => 'success', 'message' => 'Welcome back! Redirecting...']);
+            } else {
+                echo json_encode(['status' => 'error', 'message' => 'Invalid email or password.']);
+            }
+            exit;
+        }
+
+        if ($action === 'signup') {
+            $firstname = trim($_POST['firstname'] ?? '');
+            $lastname = trim($_POST['lastname'] ?? '');
+            $email = trim($_POST['email'] ?? '');
+            $password = $_POST['password'] ?? '';
+            $confirm = $_POST['confirm'] ?? '';
+
+            if ($password !== $confirm) {
+                echo json_encode(['status' => 'error', 'message' => 'Passwords do not match.']);
+                exit;
+            }
+
+            $stmt = $pdo->prepare("SELECT user_id FROM tbl_users WHERE email = ?");
+            $stmt->execute([$email]);
+            if ($stmt->fetch()) {
+                echo json_encode(['status' => 'error', 'message' => 'Email already exists.']);
+                exit;
+            }
+
+            // Inserting directly into firstname and lastname columns
+            $stmt = $pdo->prepare("INSERT INTO tbl_users (firstname, lastname, email, password, created_at) VALUES (?, ?, ?, ?, NOW())");
+            if ($stmt->execute([$firstname, $lastname, $email, $password])) {
+                echo json_encode(['status' => 'success', 'message' => 'Account created! Redirecting...']);
+            } else {
+                echo json_encode(['status' => 'error', 'message' => 'Something went wrong. Please try again.']);
+            }
+            exit;
+        }
+    } catch (Exception $e) {
+        // If there's a database error, it returns it as a JSON message instead of breaking the JS
+        echo json_encode(['status' => 'error', 'message' => 'DB Error: ' . $e->getMessage()]);
+        exit;
+    }
+}
+?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -146,10 +210,10 @@
             padding: 50px;
             transition: transform 0.7s cubic-bezier(0.22,1,0.36,1);
         }
-        .overlay-left { transform: translateX(-20%); }
+        .overlay-left { transform: translateX(0%); }
         .overlay-right { transform: translateX(0); }
         .overlay-container.shifted .overlay-left { transform: translateX(100%); }
-        .overlay-container.shifted .overlay-right { transform: translateX(20%); }
+        .overlay-container.shifted .overlay-right { transform: translateX(0%); }
 
         .overlay::before { content:''; position:absolute; width:500px; height:500px; border-radius:50%; background:rgba(255,255,255,0.08); top:-150px; right:-150px; }
         .overlay::after { content:''; position:absolute; width:300px; height:300px; border-radius:50%; background:rgba(255,255,255,0.06); bottom:-80px; left:-80px; }
@@ -252,6 +316,14 @@
         @keyframes toastIn { from{transform:translateX(120%);opacity:0} to{transform:translateX(0);opacity:1} }
         @keyframes toastOut { to{transform:translateX(120%);opacity:0} }
 
+        /* Fix form alignment to prevent overlay overlap */
+#loginPanel {
+    padding: 50px 25% 50px 0; /* 25% of the 200% wrapper equals exactly half the card */
+}
+#signupPanel {
+    padding: 50px 0 50px 25%; /* Reverses the alignment for the signup side */
+}
+
         /* RESPONSIVE */
         @media (max-width: 800px) {
             .overlay-container { display:none; }
@@ -295,14 +367,15 @@
                         <div class="form-title">Welcome <span class="green">Back</span></div>
                         <div class="form-sub">Sign in to continue your application</div>
                         <form id="loginForm" onsubmit="handleLogin(event)" novalidate>
+                            <input type="hidden" name="action" value="login">
                             <div class="inp-group">
-                                <input type="email" id="lEmail" placeholder=" " required autocomplete="email">
+                                <input type="email" id="lEmail" name="email" placeholder=" " required autocomplete="email">
                                 <i class="fas fa-envelope inp-icon"></i>
                                 <label class="float-label" for="lEmail">Email Address</label>
                                 <span class="vmsg" id="lEmailMsg"></span>
                             </div>
                             <div class="inp-group">
-                                <input type="password" id="lPw" placeholder=" " required autocomplete="current-password">
+                                <input type="password" id="lPw" name="password" placeholder=" " required autocomplete="current-password">
                                 <i class="fas fa-lock inp-icon"></i>
                                 <label class="float-label" for="lPw">Password</label>
                                 <button type="button" class="pw-eye" onclick="togglePw('lPw',this)"><i class="fas fa-eye"></i></button>
@@ -314,12 +387,12 @@
                             </div>
                             <button type="submit" class="submit-btn" id="loginBtn">LOGIN NOW<div class="spin"><span class="sdot"></span><span class="sdot"></span><span class="sdot"></span></div><div class="chk-icon"><i class="fas fa-check" style="color:#fff;font-size:18px"></i></div></button>
                         </form>
-                        <div class="divider"><span>or</span></div>
+                        <!-- <div class="divider"><span>or</span></div>
                         <div class="social-row">
                             <button class="soc-btn" onclick="showToast('Google auth not connected yet.','info')"><i class="fab fa-google"></i></button>
                             <button class="soc-btn" onclick="showToast('Facebook auth not connected yet.','info')"><i class="fab fa-facebook-f"></i></button>
                             <button class="soc-btn" onclick="showToast('GitHub auth not connected yet.','info')"><i class="fab fa-github"></i></button>
-                        </div>
+                        </div> -->
                     </div>
                 </div>
 
@@ -329,20 +402,27 @@
                         <div class="form-title">Create <span class="green">Account</span></div>
                         <div class="form-sub">Register and start your application today</div>
                         <form id="signupForm" onsubmit="handleSignup(event)" novalidate>
+                            <input type="hidden" name="action" value="signup">
                             <div class="inp-group">
-                                <input type="text" id="sName" placeholder=" " required autocomplete="name">
+                                <input type="text" id="sFirstname" name="firstname" placeholder=" " required autocomplete="given-name">
                                 <i class="fas fa-user inp-icon"></i>
-                                <label class="float-label" for="sName">Full Name</label>
-                                <span class="vmsg" id="sNameMsg"></span>
+                                <label class="float-label" for="sFirstname">First Name</label>
+                                <span class="vmsg" id="sFirstnameMsg"></span>
                             </div>
                             <div class="inp-group">
-                                <input type="email" id="sEmail" placeholder=" " required autocomplete="email">
+                                <input type="text" id="sLastname" name="lastname" placeholder=" " required autocomplete="family-name">
+                                <i class="fas fa-user inp-icon"></i>
+                                <label class="float-label" for="sLastname">Last Name</label>
+                                <span class="vmsg" id="sLastnameMsg"></span>
+                            </div>
+                            <div class="inp-group">
+                                <input type="email" id="sEmail" name="email" placeholder=" " required autocomplete="email">
                                 <i class="fas fa-envelope inp-icon"></i>
                                 <label class="float-label" for="sEmail">Email Address</label>
                                 <span class="vmsg" id="sEmailMsg"></span>
                             </div>
                             <div class="inp-group">
-                                <input type="password" id="sPw" placeholder=" " required autocomplete="new-password" oninput="checkStr(this.value)">
+                                <input type="password" id="sPw" name="password" placeholder=" " required autocomplete="new-password" oninput="checkStr(this.value)">
                                 <i class="fas fa-lock inp-icon"></i>
                                 <label class="float-label" for="sPw">Password</label>
                                 <button type="button" class="pw-eye" onclick="togglePw('sPw',this)"><i class="fas fa-eye"></i></button>
@@ -351,21 +431,22 @@
                             <div class="pw-bars" id="pwBars"><div class="bar" id="b1"></div><div class="bar" id="b2"></div><div class="bar" id="b3"></div><div class="bar" id="b4"></div></div>
                             <div class="pw-lbl" id="pwLbl"></div>
                             <div class="inp-group">
-                                <input type="password" id="sConf" placeholder=" " required autocomplete="new-password">
+                                <input type="password" id="sConf" name="confirm" placeholder=" " required autocomplete="new-password">
                                 <i class="fas fa-shield-halved inp-icon"></i>
                                 <label class="float-label" for="sConf">Confirm Password</label>
                                 <button type="button" class="pw-eye" onclick="togglePw('sConf',this)"><i class="fas fa-eye"></i></button>
                                 <span class="vmsg" id="sConfMsg"></span>
                             </div>
+                            <!-- ... rest of signup form ... -->
                             <label class="chk-row" style="margin-bottom:10px"><input type="checkbox" id="agreeChk" required><span class="chk-box"><i class="fas fa-check"></i></span>I agree to the Terms & Conditions</label>
                             <button type="submit" class="submit-btn" id="signupBtn">SIGN UP<div class="spin"><span class="sdot"></span><span class="sdot"></span><span class="sdot"></span></div><div class="chk-icon"><i class="fas fa-check" style="color:#fff;font-size:18px"></i></div></button>
                         </form>
-                        <div class="divider"><span>or</span></div>
+                        <!-- <div class="divider"><span>or</span></div>
                         <div class="social-row">
                             <button class="soc-btn" onclick="showToast('Google auth not connected yet.','info')"><i class="fab fa-google"></i></button>
                             <button class="soc-btn" onclick="showToast('Facebook auth not connected yet.','info')"><i class="fab fa-facebook-f"></i></button>
                             <button class="soc-btn" onclick="showToast('GitHub auth not connected yet.','info')"><i class="fab fa-github"></i></button>
-                        </div>
+                        </div> -->
                     </div>
                 </div>
 
@@ -494,8 +575,8 @@
             });
         });
 
-        /* Login */
-        function handleLogin(e) {
+                /* Login */
+        async function handleLogin(e) {
             e.preventDefault();
             let ok = true;
             const em = document.getElementById('lEmail').value.trim();
@@ -507,23 +588,46 @@
             else if (pw.length < 6) { showV('lPwMsg','At least 6 characters.','err'); ok=false; }
             else clearV('lPwMsg');
             if (!ok) return;
+
             const btn = document.getElementById('loginBtn');
             btn.classList.add('loading');
-            setTimeout(() => { btn.classList.remove('loading'); btn.classList.add('done'); showToast('Welcome back! Redirecting...','success'); setTimeout(() => { btn.classList.remove('done'); }, 2000); }, 1800);
+
+            try {
+                const formData = new FormData(document.getElementById('loginForm'));
+                const response = await fetch('register.php', { method: 'POST', body: formData });
+                const text = await response.text();
+                try { var data = JSON.parse(text); } catch(e) { throw new Error("Server: " + text.substring(0,150)); }
+
+                btn.classList.remove('loading');
+                if (data.status === 'success') {
+                    btn.classList.add('done'); 
+                    showToast(data.message, 'success'); 
+                    setTimeout(() => { window.location.href = 'dashboard.php'; }, 1500); // Change dashboard.php to your target page
+                } else {
+                    showToast(data.message, 'error');
+                }
+            } catch (error) {
+                btn.classList.remove('loading');
+                showToast('An error occurred. Please try again.', 'error');
+            }
         }
 
         /* Signup */
-        function handleSignup(e) {
+        async function handleSignup(e) {
             e.preventDefault();
             let ok = true;
-            const nm = document.getElementById('sName').value.trim();
+            const fn = document.getElementById('sFirstname').value.trim();
+            const ln = document.getElementById('sLastname').value.trim();
             const em = document.getElementById('sEmail').value.trim();
             const pw = document.getElementById('sPw').value;
             const cf = document.getElementById('sConf').value;
             const ag = document.getElementById('agreeChk').checked;
-            if (!nm) { showV('sNameMsg','Full name is required.','err'); ok=false; }
-            else if (nm.length < 2) { showV('sNameMsg','At least 2 characters.','err'); ok=false; }
-            else clearV('sNameMsg');
+            if (!fn) { showV('sFirstnameMsg','First name is required.','err'); ok=false; }
+            else if (fn.length < 2) { showV('sFirstnameMsg','At least 2 characters.','err'); ok=false; }
+            else clearV('sFirstnameMsg');
+            if (!ln) { showV('sLastnameMsg','Last name is required.','err'); ok=false; }
+            else if (ln.length < 2) { showV('sLastnameMsg','At least 2 characters.','err'); ok=false; }
+            else clearV('sLastnameMsg');
             if (!em) { showV('sEmailMsg','Email is required.','err'); ok=false; }
             else if (!isEmail(em)) { showV('sEmailMsg','Enter a valid email.','err'); ok=false; }
             else clearV('sEmailMsg');
@@ -535,9 +639,28 @@
             else clearV('sConfMsg');
             if (!ag) { showToast('You must agree to the Terms & Conditions.','error'); ok=false; }
             if (!ok) return;
+
             const btn = document.getElementById('signupBtn');
             btn.classList.add('loading');
-            setTimeout(() => { btn.classList.remove('loading'); btn.classList.add('done'); showToast('Account created! Redirecting...','success'); setTimeout(() => { btn.classList.remove('done'); }, 2000); }, 2000);
+
+            try {
+                const formData = new FormData(document.getElementById('signupForm'));
+                const response = await fetch('register.php', { method: 'POST', body: formData });
+                const text = await response.text();
+                try { var data = JSON.parse(text); } catch(e) { throw new Error("Server: " + text.substring(0,150)); }
+
+                btn.classList.remove('loading');
+                if (data.status === 'success') {
+                    btn.classList.add('done'); 
+                    showToast(data.message, 'success'); 
+                    setTimeout(() => { window.location.href = 'register.php'; }, 1500); // Change dashboard.php to your target page
+                } else {
+                    showToast(data.message, 'error');
+                }
+            } catch (error) {
+                btn.classList.remove('loading');
+                showToast('An error occurred. Please try again.', 'error');
+            }
         }
 
         /* Toast */

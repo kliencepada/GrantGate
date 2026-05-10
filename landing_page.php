@@ -425,7 +425,7 @@
                 APPLY NOW <i class="fas fa-arrow-right"></i>
             </a>
 
-            <div class="stats-row">
+            <!-- <div class="stats-row">
                 <div class="stat-item">
                     <div class="stat-num"><span class="gn">500</span>+</div>
                     <div class="stat-label">Scholarships</div>
@@ -438,12 +438,12 @@
                     <div class="stat-num"><span class="gn">100</span>%</div>
                     <div class="stat-label">Free Access</div>
                 </div>
-            </div>
+            </div> -->
         </div>
 
         <div class="photo-circle">
-            <img src="james.png" class="overlap-img pic-left">
-            <img src="janes.png" class="overlap-img pic-right">
+            <img src="images/james.png" class="overlap-img pic-left">
+            <img src="images/janes.png" class="overlap-img pic-right">
         </div>
 
         <div class="scroll-indicator">
@@ -455,7 +455,7 @@
     <section id="about-section">
         <div class="team-container" id="teamBox">
             <div class="member-card" id="card-james" onclick="expandMember(this)">
-                <img src="jamescut.png">
+                <img src="images/jamescut.png">
                 <div class="member-info">
                     <h2>JIREH JAMES CEPADA</h2>
                     <p>I am a student who values hard work and community. Through GrantGate, I want to help my fellow students find scholarship opportunities more easily so that we can all succeed in our studies.</p>
@@ -469,7 +469,7 @@
             </div>
 
             <div class="member-card" id="card-nes" onclick="expandMember(this)">
-                <img src="janescut.png">
+                <img src="images/janescut.png">
                 <div class="member-info">
                     <h2>JNES PATRIANA</h2>
                     <p>I am a student who believes in the power of education. Through this project, I aim to contribute to a system that makes scholarship opportunities more accessible and organized for students.</p>
