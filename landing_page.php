@@ -425,7 +425,7 @@
                 APPLY NOW <i class="fas fa-arrow-right"></i>
             </a>
 
-            <div class="stats-row">
+            <!-- <div class="stats-row">
                 <div class="stat-item">
                     <div class="stat-num"><span class="gn">500</span>+</div>
                     <div class="stat-label">Scholarships</div>
@@ -438,7 +438,7 @@
                     <div class="stat-num"><span class="gn">100</span>%</div>
                     <div class="stat-label">Free Access</div>
                 </div>
-            </div>
+            </div> -->
         </div>
 
         <div class="photo-circle">
