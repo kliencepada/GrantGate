@@ -1,4 +1,49 @@
-<?php session_start(); ?>
+<?php 
+session_start(); 
+require_once 'db_conn.php'; // Make sure this file connects to your database
+
+// Fetch all personal info joined with users and requirements
+try {
+    // Using LEFT JOIN so we still get users even if they haven't uploaded requirements yet
+    $stmt = $pdo->query("
+        SELECT 
+            p.info_id, p.user_id, p.firstname, p.lastname, p.birthday, p.gender, 
+            p.contact_no, p.email_add, p.home_address, p.guardian_fullname, 
+            p.guardian_contact_no, p.occupation, p.income, p.school, p.year_level, 
+            p.course, p.gwa, p.app_status,
+            u.name, u.email, u.created_at,
+            COUNT(r.req_id) as doc_count
+        FROM tbl_personal_info p
+        LEFT JOIN tbl_users u ON p.user_id = u.user_id
+        LEFT JOIN tbl_requirements r ON p.user_id = r.user_id
+        GROUP BY p.info_id
+        ORDER BY u.created_at DESC
+    ");
+    $applicants = $stmt->fetchAll(PDO::FETCH_ASSOC);
+} catch (PDOException $e) {
+    die("Database error: " . $e->getMessage());
+}
+
+// Handle Status Update via AJAX POST
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'update_status') {
+    header('Content-Type: application/json');
+    $user_id = $_POST['user_id'];
+    $status = $_POST['status'];
+    
+    // Check if app_status column exists, otherwise we handle it via session/JS mapping
+    try {
+        $check = $pdo->query("SHOW COLUMNS FROM `tbl_personal_info` LIKE 'app_status'");
+        if ($check->rowCount() > 0) {
+            $upd = $pdo->prepare("UPDATE tbl_personal_info SET app_status = ? WHERE user_id = ?");
+            $upd->execute([$status, $user_id]);
+        }
+        echo json_encode(['success' => true]);
+    } catch (Exception $e) {
+        echo json_encode(['success' => false, 'msg' => $e->getMessage()]);
+    }
+    exit;
+}
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -449,28 +494,17 @@
     </div>
 
     <script>
-        /* ===== SAMPLE DATA ===== */
-        const applicants = [
-            { id:1, fname:'Maria', lname:'Santos', email:'maria.santos@email.com', phone:'+63 917 123 4567', dob:'2002-03-15', gender:'Female', address:'Manolo Fortich, Bukidnon', parent:'Juan Santos', parentPhone:'+63 918 765 4321', occupation:'Farmer', income:'₱100,000 - ₱250,000', school:'Bukidnon State University', year:'3rd Year', course:'BSIT', gwa:'1.45', status:'pending', date:'2025-01-10', docs:{cor:true,grades:true,id:true} },
-            { id:2, fname:'Jose', lname:'Reyes', email:'jose.reyes@email.com', phone:'+63 921 555 1234', dob:'2001-07-22', gender:'Male', address:'Valencia City, Bukidnon', parent:'Ana Reyes', parentPhone:'+63 920 111 2233', occupation:'Teacher', income:'₱250,000 - ₱500,000', school:'Central Mindanao University', year:'2nd Year', course:'BSED Math', gwa:'1.72', status:'approved', date:'2025-01-05', docs:{cor:true,grades:true,id:true} },
-            { id:3, fname:'Ana', lname:'Cruz', email:'ana.cruz@email.com', phone:'+63 930 222 8899', dob:'2003-11-08', gender:'Female', address:'Malaybalay City, Bukidnon', parent:'Pedro Cruz', parentPhone:'+63 931 444 5566', occupation:'Driver', income:'Below ₱100,000', school:'Bukidnon State University', year:'1st Year', course:'BSBA', gwa:'1.88', status:'pending', date:'2025-01-12', docs:{cor:true,grades:false,id:true} },
-            { id:4, fname:'Mark', lname:'Lopez', email:'mark.lopez@email.com', phone:'+63 915 666 7788', dob:'2002-01-30', gender:'Male', address:'Impasug-ong, Bukidnon', parent:'Rosa Lopez', parentPhone:'+63 916 888 9900', occupation:'OFW', income:'₱250,000 - ₱500,000', school:'SPC', year:'4th Year', course:'BSIT', gwa:'1.35', status:'approved', date:'2024-12-20', docs:{cor:true,grades:true,id:true} },
-            { id:5, fname:'Lisa', lname:'Garcia', email:'lisa.garcia@email.com', phone:'+63 928 333 4455', dob:'2003-05-14', gender:'Female', address:'Sumilao, Bukidnon', parent:'Luis Garcia', parentPhone:'+63 929 555 6677', occupation:'Vendor', income:'Below ₱100,000', school:'CMU', year:'2nd Year', course:'BS Agriculture', gwa:'2.10', status:'rejected', date:'2025-01-08', docs:{cor:true,grades:true,id:false} },
-            { id:6, fname:'Rico', lname:'Mendoza', email:'rico.mendoza@email.com', phone:'+63 919 777 8899', dob:'2001-09-03', gender:'Male', address:'Libona, Bukidnon', parent:'Elena Mendoza', parentPhone:'+63 910 222 3344', occupation:'Farmer', income:'Below ₱100,000', school:'BukSU', year:'3rd Year', course:'BSED English', gwa:'1.55', status:'pending', date:'2025-01-15', docs:{cor:true,grades:true,id:true} },
-            { id:7, fname:'Carmen', lname:'Dela Cruz', email:'carmen.dc@email.com', phone:'+63 926 444 5566', dob:'2002-12-25', gender:'Female', address:'Don Carlos, Bukidnon', parent:'Mario Dela Cruz', parentPhone:'+63 927 888 9900', occupation:'Seamstress', income:'₱100,000 - ₱250,000', school:'SPC', year:'1st Year', course:'BEED', gwa:'1.65', status:'approved', date:'2024-12-18', docs:{cor:true,grades:true,id:true} },
-            { id:8, fname:'Paolo', lname:'Rivera', email:'paolo.r@email.com', phone:'+63 923 999 1100', dob:'2003-04-17', gender:'Male', address:'Maramag, Bukidnon', parent:'Teresa Rivera', parentPhone:'+63 924 333 4455', occupation:'Carpenter', income:'Below ₱100,000', school:'CMU', year:'4th Year', course:'BS Stat', gwa:'1.42', status:'pending', date:'2025-01-14', docs:{cor:true,grades:true,id:true} },
-            { id:9, fname:'Grace', lname:'Villanueva', email:'grace.v@email.com', phone:'+63 918 555 6677', dob:'2002-08-09', gender:'Female', address:'Kibawe, Bukidnon', parent:'Ramon Villanueva', parentPhone:'+63 919 777 8899', occupation:'Fisherman', income:'Below ₱100,000', school:'BukSU', year:'2nd Year', course:'BSIT', gwa:'1.90', status:'rejected', date:'2025-01-03', docs:{cor:false,grades:true,id:true} },
-            { id:10, fname:'Daniel', lname:'Soriano', email:'daniel.s@email.com', phone:'+63 932 111 2233', dob:'2001-06-11', gender:'Male', address:'Quezon, Bukidnon', parent:'Linda Soriano', parentPhone:'+63 933 444 5566', occupation:'Farmer', income:'₱100,000 - ₱250,000', school:'CMU', year:'3rd Year', course:'BS AgriBus', gwa:'1.38', status:'pending', date:'2025-01-16', docs:{cor:true,grades:true,id:true} }
-        ];
+        /* ===== FETCH REAL DATA FROM PHP ===== */
+        const applicants = <?php echo json_encode($applicants ?: []); ?>;
 
         let currentFilter = 'all';
 
         /* ===== COMPUTE STATS ===== */
         function getStats() {
             const total = applicants.length;
-            const approved = applicants.filter(a => a.status === 'approved').length;
-            const rejected = applicants.filter(a => a.status === 'rejected').length;
-            const pending = applicants.filter(a => a.status === 'pending').length;
+            const approved = applicants.filter(a => a.app_status === 'approved').length;
+            const rejected = applicants.filter(a => a.app_status === 'rejected').length;
+            const pending = applicants.filter(a => a.app_status === 'pending').length;
             return { total, approved, rejected, pending };
         }
 
@@ -542,10 +576,10 @@
             const search = document.getElementById('searchInput').value.toLowerCase();
 
             let filtered = applicants;
-            if (currentFilter !== 'all') filtered = filtered.filter(a => a.status === currentFilter);
+            if (currentFilter !== 'all') filtered = filtered.filter(a => a.app_status === currentFilter);
             if (search) filtered = filtered.filter(a =>
-                (a.fname + ' ' + a.lname).toLowerCase().includes(search) ||
-                a.email.toLowerCase().includes(search) ||
+                (a.firstname + ' ' + a.lastname).toLowerCase().includes(search) ||
+                a.email_add.toLowerCase().includes(search) ||
                 a.school.toLowerCase().includes(search)
             );
 
@@ -561,21 +595,24 @@
                     rejected: '<span class="badge rejected"><i class="fas fa-times"></i> Rejected</span>'
                 };
 
-                const actions = a.status === 'pending' ?
+                const actions = a.app_status === 'pending' ?
                     '<div class="action-group">' +
-                    '<button class="action-btn view" onclick="viewApplicant('+a.id+')" title="View"><i class="fas fa-eye"></i></button>' +
-                    '<button class="action-btn approve" onclick="updateStatus('+a.id+',\'approved\')" title="Approve"><i class="fas fa-check"></i></button>' +
-                    '<button class="action-btn reject" onclick="updateStatus('+a.id+',\'rejected\')" title="Reject"><i class="fas fa-times"></i></button>' +
+                    '<button class="action-btn view" onclick="viewApplicant('+a.user_id+')" title="View"><i class="fas fa-eye"></i></button>' +
+                    '<button class="action-btn approve" onclick="updateStatus('+a.user_id+',\'approved\')" title="Approve"><i class="fas fa-check"></i></button>' +
+                    '<button class="action-btn reject" onclick="updateStatus('+a.user_id+',\'rejected\')" title="Reject"><i class="fas fa-times"></i></button>' +
                     '</div>' :
                     '<div class="action-group">' +
-                    '<button class="action-btn view" onclick="viewApplicant('+a.id+')" title="View"><i class="fas fa-eye"></i></button>' +
+                    '<button class="action-btn view" onclick="viewApplicant('+a.user_id+')" title="View"><i class="fas fa-eye"></i></button>' +
                     '</div>';
 
-                return '<tr data-status="'+a.status+'">' +
-                    '<td><div class="applicant-name">'+a.fname+' '+a.lname+'</div><div class="applicant-email">'+a.email+'</div></td>' +
-                    '<td>'+a.school+'<br><span style="font-size:12px;color:var(--muted)">'+a.course+' · '+a.year+'</span></td>' +
-                    '<td>'+a.date+'</td>' +
-                    '<td>'+statusBadge[a.status]+'</td>' +
+                // Format date applied
+                const dateApplied = a.created_at ? new Date(a.created_at).toISOString().split('T')[0] : 'N/A';
+
+                return '<tr data-status="'+a.app_status+'">' +
+                    '<td><div class="applicant-name">'+a.firstname+' '+a.lastname+'</div><div class="applicant-email">'+a.email_add+'</div></td>' +
+                    '<td>'+a.school+'<br><span style="font-size:12px;color:var(--muted)">'+a.course+' · '+a.year_level+'</span></td>' +
+                    '<td>'+dateApplied+'</td>' +
+                    '<td>'+statusBadge[a.app_status]+'</td>' +
                     '<td>'+actions+'</td>' +
                     '</tr>';
             }).join('');
@@ -594,45 +631,60 @@
 
         /* ===== UPDATE STATUS ===== */
         function updateStatus(id, newStatus) {
-            const a = applicants.find(a => a.id === id);
-            if (!a) return;
-            a.status = newStatus;
-            updateDashboard();
-            const verb = newStatus === 'approved' ? 'approved' : 'rejected';
-            showToast(a.fname + ' ' + a.lname + ' has been ' + verb + '.', newStatus === 'approved' ? 'success' : 'error');
+            // Send AJAX request to update database
+            fetch('admin_dashboard.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: 'action=update_status&user_id=' + id + '&status=' + newStatus
+            })
+            .then(res => res.json())
+            .then(data => {
+                if(data.success) {
+                    // Update local JS object
+                    const a = applicants.find(a => a.user_id == id);
+                    if (a) a.app_status = newStatus;
+                    updateDashboard();
+                    const verb = newStatus === 'approved' ? 'approved' : 'rejected';
+                    showToast(a.firstname + ' ' + a.lastname + ' has been ' + verb + '.', newStatus === 'approved' ? 'success' : 'error');
+                } else {
+                    showToast('Failed to update status.', 'error');
+                }
+            })
+            .catch(err => showToast('Network error.', 'error'));
         }
 
         /* ===== VIEW APPLICANT ===== */
         function viewApplicant(id) {
-            const a = applicants.find(a => a.id === id);
+            const a = applicants.find(a => a.user_id == id);
             if (!a) return;
+
+            // Document status logic
+            const hasDocs = a.doc_count > 0;
 
             const body = document.getElementById('modalBody');
             body.innerHTML =
-                '<div class="modal-field"><label>Full Name</label><div class="val">'+a.fname+' '+a.lname+'</div></div>' +
+                '<div class="modal-field"><label>Full Name</label><div class="val">'+a.firstname+' '+a.lastname+'</div></div>' +
                 '<div class="modal-field"><label>Gender</label><div class="val">'+a.gender+'</div></div>' +
-                '<div class="modal-field"><label>Date of Birth</label><div class="val">'+a.dob+'</div></div>' +
-                '<div class="modal-field"><label>Contact</label><div class="val">'+a.phone+'</div></div>' +
-                '<div class="modal-field full"><label>Email</label><div class="val">'+a.email+'</div></div>' +
-                '<div class="modal-field full"><label>Address</label><div class="val">'+a.address+'</div></div>' +
-                '<div class="modal-field"><label>Parent/Guardian</label><div class="val">'+a.parent+'</div></div>' +
-                '<div class="modal-field"><label>Parent Contact</label><div class="val">'+a.parentPhone+'</div></div>' +
+                '<div class="modal-field"><label>Date of Birth</label><div class="val">'+a.birthday+'</div></div>' +
+                '<div class="modal-field"><label>Contact</label><div class="val">'+a.contact_no+'</div></div>' +
+                '<div class="modal-field full"><label>Email</label><div class="val">'+a.email_add+'</div></div>' +
+                '<div class="modal-field full"><label>Address</label><div class="val">'+a.home_address+'</div></div>' +
+                '<div class="modal-field"><label>Parent/Guardian</label><div class="val">'+a.guardian_fullname+'</div></div>' +
+                '<div class="modal-field"><label>Parent Contact</label><div class="val">'+a.guardian_contact_no+'</div></div>' +
                 '<div class="modal-field"><label>Occupation</label><div class="val">'+a.occupation+'</div></div>' +
-                '<div class="modal-field"><label>Annual Income</label><div class="val">'+a.income+'</div></div>' +
+                '<div class="modal-field"><label>Annual Income</label><div class="val">₱'+a.income+'</div></div>' +
                 '<div class="modal-field"><label>School</label><div class="val">'+a.school+'</div></div>' +
-                '<div class="modal-field"><label>Year Level</label><div class="val">'+a.year+'</div></div>' +
+                '<div class="modal-field"><label>Year Level</label><div class="val">'+a.year_level+'</div></div>' +
                 '<div class="modal-field"><label>Course</label><div class="val">'+a.course+'</div></div>' +
                 '<div class="modal-field"><label>GWA</label><div class="val">'+a.gwa+'</div></div>' +
-                '<div class="modal-field"><label>COR</label><div class="val">'+(a.docs.cor?'<span style="color:var(--green)"><i class="fas fa-check-circle"></i> Uploaded</span>':'<span style="color:var(--danger)"><i class="fas fa-exclamation-circle"></i> Missing</span>')+'</div></div>' +
-                '<div class="modal-field"><label>Grades</label><div class="val">'+(a.docs.grades?'<span style="color:var(--green)"><i class="fas fa-check-circle"></i> Uploaded</span>':'<span style="color:var(--danger)"><i class="fas fa-exclamation-circle"></i> Missing</span>')+'</div></div>' +
-                '<div class="modal-field"><label>Valid ID</label><div class="val">'+(a.docs.id?'<span style="color:var(--green)"><i class="fas fa-check-circle"></i> Uploaded</span>':'<span style="color:var(--danger)"><i class="fas fa-exclamation-circle"></i> Missing</span>')+'</div></div>' +
-                '<div class="modal-field"><label>Status</label><div class="val"><span class="badge '+a.status+'">'+a.status.charAt(0).toUpperCase()+a.status.slice(1)+'</span></div></div>';
+                '<div class="modal-field"><label>Documents</label><div class="val">'+(hasDocs?'<span style="color:var(--green)"><i class="fas fa-check-circle"></i> '+a.doc_count+' Uploaded</span>':'<span style="color:var(--danger)"><i class="fas fa-exclamation-circle"></i> Missing</span>')+'</div></div>' +
+                '<div class="modal-field"><label>Status</label><div class="val"><span class="badge '+a.app_status+'">'+a.app_status.charAt(0).toUpperCase()+a.app_status.slice(1)+'</span></div></div>';
 
             const actions = document.getElementById('modalActions');
-            if (a.status === 'pending') {
+            if (a.app_status === 'pending') {
                 actions.innerHTML =
-                    '<button class="modal-btn reject" onclick="updateStatus('+a.id+',\'rejected\');closeModal()"><i class="fas fa-times"></i> Reject</button>' +
-                    '<button class="modal-btn approve" onclick="updateStatus('+a.id+',\'approved\');closeModal()"><i class="fas fa-check"></i> Approve</button>';
+                    '<button class="modal-btn reject" onclick="updateStatus('+a.user_id+',\'rejected\');closeModal()"><i class="fas fa-times"></i> Reject</button>' +
+                    '<button class="modal-btn approve" onclick="updateStatus('+a.user_id+',\'approved\');closeModal()"><i class="fas fa-check"></i> Approve</button>';
             } else {
                 actions.innerHTML = '<button class="modal-btn cancel" onclick="closeModal()">Close</button>';
             }
