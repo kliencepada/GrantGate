@@ -11,7 +11,7 @@ try {
             p.contact_no, p.email_add, p.home_address, p.guardian_fullname, 
             p.guardian_contact_no, p.occupation, p.income, p.school, p.year_level, 
             p.course, p.gwa, p.app_status,
-            u.name, u.email, u.created_at,
+            u.firstname AS user_fname, u.lastname AS user_lname, u.email, u.created_at,
             COUNT(r.req_id) as doc_count
         FROM tbl_personal_info p
         LEFT JOIN tbl_users u ON p.user_id = u.user_id
@@ -23,7 +23,6 @@ try {
 } catch (PDOException $e) {
     die("Database error: " . $e->getMessage());
 }
-
 // Handle Status Update via AJAX POST
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'update_status') {
     header('Content-Type: application/json');
@@ -595,14 +594,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                     rejected: '<span class="badge rejected"><i class="fas fa-times"></i> Rejected</span>'
                 };
 
-                const actions = a.app_status === 'pending' ?
+                            const actions = 
                     '<div class="action-group">' +
                     '<button class="action-btn view" onclick="viewApplicant('+a.user_id+')" title="View"><i class="fas fa-eye"></i></button>' +
                     '<button class="action-btn approve" onclick="updateStatus('+a.user_id+',\'approved\')" title="Approve"><i class="fas fa-check"></i></button>' +
                     '<button class="action-btn reject" onclick="updateStatus('+a.user_id+',\'rejected\')" title="Reject"><i class="fas fa-times"></i></button>' +
-                    '</div>' :
-                    '<div class="action-group">' +
-                    '<button class="action-btn view" onclick="viewApplicant('+a.user_id+')" title="View"><i class="fas fa-eye"></i></button>' +
                     '</div>';
 
                 // Format date applied
@@ -676,18 +672,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                 '<div class="modal-field"><label>School</label><div class="val">'+a.school+'</div></div>' +
                 '<div class="modal-field"><label>Year Level</label><div class="val">'+a.year_level+'</div></div>' +
                 '<div class="modal-field"><label>Course</label><div class="val">'+a.course+'</div></div>' +
-                '<div class="modal-field"><label>GWA</label><div class="val">'+a.gwa+'</div></div>' +
-                '<div class="modal-field"><label>Documents</label><div class="val">'+(hasDocs?'<span style="color:var(--green)"><i class="fas fa-check-circle"></i> '+a.doc_count+' Uploaded</span>':'<span style="color:var(--danger)"><i class="fas fa-exclamation-circle"></i> Missing</span>')+'</div></div>' +
-                '<div class="modal-field"><label>Status</label><div class="val"><span class="badge '+a.app_status+'">'+a.app_status.charAt(0).toUpperCase()+a.app_status.slice(1)+'</span></div></div>';
+                                '<div class="modal-field"><label>GWA</label><div class="val">'+a.gwa+'</div></div>' +
+                '<div class="modal-field"><label>Documents</label><div class="val">'+(a.doc_count > 0 ? '<span style="color:var(--green)"><i class="fas fa-check-circle"></i> '+a.doc_count+' Uploaded</span>' : '<span style="color:var(--danger)"><i class="fas fa-exclamation-circle"></i> Missing</span>')+'</div></div>' +
+                '<div class="modal-field"><label>Status</label><div class="val"><span class="badge '+(a.app_status || 'pending')+'">'+(a.app_status ? a.app_status.charAt(0).toUpperCase()+a.app_status.slice(1) : 'Pending')+'</span></div></div>';
 
-            const actions = document.getElementById('modalActions');
-            if (a.app_status === 'pending') {
-                actions.innerHTML =
-                    '<button class="modal-btn reject" onclick="updateStatus('+a.user_id+',\'rejected\');closeModal()"><i class="fas fa-times"></i> Reject</button>' +
-                    '<button class="modal-btn approve" onclick="updateStatus('+a.user_id+',\'approved\');closeModal()"><i class="fas fa-check"></i> Approve</button>';
-            } else {
-                actions.innerHTML = '<button class="modal-btn cancel" onclick="closeModal()">Close</button>';
-            }
+                        const actions = document.getElementById('modalActions');
+            actions.innerHTML =
+                '<button class="modal-btn cancel" onclick="closeModal()">Close</button>' +
+                '<button class="modal-btn reject" onclick="updateStatus('+a.user_id+',\'rejected\');closeModal()"><i class="fas fa-times"></i> Reject</button>' +
+                '<button class="modal-btn approve" onclick="updateStatus('+a.user_id+',\'approved\');closeModal()"><i class="fas fa-check"></i> Approve</button>';
 
             document.getElementById('modalOverlay').classList.add('open');
         }
