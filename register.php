@@ -1,4 +1,59 @@
-<?php session_start(); ?>
+<?php 
+session_start(); 
+require_once 'db_conn.php';
+
+// ===== BACKEND LOGIC FOR AJAX =====
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
+    header('Content-Type: application/json');
+    $action = $_POST['action'];
+
+    if ($action === 'login') {
+        $email = trim($_POST['email'] ?? '');
+        $password = $_POST['password'] ?? '';
+
+        $stmt = $pdo->prepare("SELECT * FROM tbl_users WHERE email = ?");
+        $stmt->execute([$email]);
+        $user = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if ($user && $user['password'] === $password) { // No hashing as requested
+            $_SESSION['user_id'] = $user['user_id'];
+            $_SESSION['fullname'] = $user['fullname'];
+            echo json_encode(['status' => 'success', 'message' => 'Welcome back! Redirecting...']);
+        } else {
+            echo json_encode(['status' => 'error', 'message' => 'Invalid email or password.']);
+        }
+        exit;
+    }
+
+    if ($action === 'signup') {
+        $fullname = trim($_POST['fullname'] ?? '');
+        $email = trim($_POST['email'] ?? '');
+        $password = $_POST['password'] ?? '';
+        $confirm = $_POST['confirm'] ?? '';
+
+        if ($password !== $confirm) {
+            echo json_encode(['status' => 'error', 'message' => 'Passwords do not match.']);
+            exit;
+        }
+
+        $stmt = $pdo->prepare("SELECT user_id FROM tbl_users WHERE email = ?");
+        $stmt->execute([$email]);
+        if ($stmt->fetch()) {
+            echo json_encode(['status' => 'error', 'message' => 'Email already exists.']);
+            exit;
+        }
+
+        $stmt = $pdo->prepare("INSERT INTO tbl_users (fullname, email, password, created_at) VALUES (?, ?, ?, NOW())");
+        if ($stmt->execute([$fullname, $email, $password])) {
+            echo json_encode(['status' => 'success', 'message' => 'Account created! Redirecting...']);
+        } else {
+            echo json_encode(['status' => 'error', 'message' => 'Something went wrong. Please try again.']);
+        }
+        exit;
+    }
+}
+?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -146,10 +201,10 @@
             padding: 50px;
             transition: transform 0.7s cubic-bezier(0.22,1,0.36,1);
         }
-        .overlay-left { transform: translateX(-20%); }
+        .overlay-left { transform: translateX(0%); }
         .overlay-right { transform: translateX(0); }
         .overlay-container.shifted .overlay-left { transform: translateX(100%); }
-        .overlay-container.shifted .overlay-right { transform: translateX(20%); }
+        .overlay-container.shifted .overlay-right { transform: translateX(0%); }
 
         .overlay::before { content:''; position:absolute; width:500px; height:500px; border-radius:50%; background:rgba(255,255,255,0.08); top:-150px; right:-150px; }
         .overlay::after { content:''; position:absolute; width:300px; height:300px; border-radius:50%; background:rgba(255,255,255,0.06); bottom:-80px; left:-80px; }
@@ -252,6 +307,14 @@
         @keyframes toastIn { from{transform:translateX(120%);opacity:0} to{transform:translateX(0);opacity:1} }
         @keyframes toastOut { to{transform:translateX(120%);opacity:0} }
 
+        /* Fix form alignment to prevent overlay overlap */
+#loginPanel {
+    padding: 50px 25% 50px 0; /* 25% of the 200% wrapper equals exactly half the card */
+}
+#signupPanel {
+    padding: 50px 0 50px 25%; /* Reverses the alignment for the signup side */
+}
+
         /* RESPONSIVE */
         @media (max-width: 800px) {
             .overlay-container { display:none; }
@@ -295,14 +358,15 @@
                         <div class="form-title">Welcome <span class="green">Back</span></div>
                         <div class="form-sub">Sign in to continue your application</div>
                         <form id="loginForm" onsubmit="handleLogin(event)" novalidate>
+                            <input type="hidden" name="action" value="login">
                             <div class="inp-group">
-                                <input type="email" id="lEmail" placeholder=" " required autocomplete="email">
+                                <input type="email" id="lEmail" name="email" placeholder=" " required autocomplete="email">
                                 <i class="fas fa-envelope inp-icon"></i>
                                 <label class="float-label" for="lEmail">Email Address</label>
                                 <span class="vmsg" id="lEmailMsg"></span>
                             </div>
                             <div class="inp-group">
-                                <input type="password" id="lPw" placeholder=" " required autocomplete="current-password">
+                                <input type="password" id="lPw" name="password" placeholder=" " required autocomplete="current-password">
                                 <i class="fas fa-lock inp-icon"></i>
                                 <label class="float-label" for="lPw">Password</label>
                                 <button type="button" class="pw-eye" onclick="togglePw('lPw',this)"><i class="fas fa-eye"></i></button>
@@ -314,12 +378,12 @@
                             </div>
                             <button type="submit" class="submit-btn" id="loginBtn">LOGIN NOW<div class="spin"><span class="sdot"></span><span class="sdot"></span><span class="sdot"></span></div><div class="chk-icon"><i class="fas fa-check" style="color:#fff;font-size:18px"></i></div></button>
                         </form>
-                        <div class="divider"><span>or</span></div>
+                        <!-- <div class="divider"><span>or</span></div>
                         <div class="social-row">
                             <button class="soc-btn" onclick="showToast('Google auth not connected yet.','info')"><i class="fab fa-google"></i></button>
                             <button class="soc-btn" onclick="showToast('Facebook auth not connected yet.','info')"><i class="fab fa-facebook-f"></i></button>
                             <button class="soc-btn" onclick="showToast('GitHub auth not connected yet.','info')"><i class="fab fa-github"></i></button>
-                        </div>
+                        </div> -->
                     </div>
                 </div>
 
@@ -328,21 +392,22 @@
                     <div class="form-inner">
                         <div class="form-title">Create <span class="green">Account</span></div>
                         <div class="form-sub">Register and start your application today</div>
-                        <form id="signupForm" onsubmit="handleSignup(event)" novalidate>
+                                                <form id="signupForm" onsubmit="handleSignup(event)" novalidate>
+                            <input type="hidden" name="action" value="signup">
                             <div class="inp-group">
-                                <input type="text" id="sName" placeholder=" " required autocomplete="name">
+                                <input type="text" id="sName" name="name" placeholder=" " required autocomplete="name">
                                 <i class="fas fa-user inp-icon"></i>
                                 <label class="float-label" for="sName">Full Name</label>
                                 <span class="vmsg" id="sNameMsg"></span>
                             </div>
                             <div class="inp-group">
-                                <input type="email" id="sEmail" placeholder=" " required autocomplete="email">
+                                <input type="email" id="sEmail" name="email" placeholder=" " required autocomplete="email">
                                 <i class="fas fa-envelope inp-icon"></i>
                                 <label class="float-label" for="sEmail">Email Address</label>
                                 <span class="vmsg" id="sEmailMsg"></span>
                             </div>
                             <div class="inp-group">
-                                <input type="password" id="sPw" placeholder=" " required autocomplete="new-password" oninput="checkStr(this.value)">
+                                <input type="password" id="sPw" name="password" placeholder=" " required autocomplete="new-password" oninput="checkStr(this.value)">
                                 <i class="fas fa-lock inp-icon"></i>
                                 <label class="float-label" for="sPw">Password</label>
                                 <button type="button" class="pw-eye" onclick="togglePw('sPw',this)"><i class="fas fa-eye"></i></button>
@@ -351,21 +416,22 @@
                             <div class="pw-bars" id="pwBars"><div class="bar" id="b1"></div><div class="bar" id="b2"></div><div class="bar" id="b3"></div><div class="bar" id="b4"></div></div>
                             <div class="pw-lbl" id="pwLbl"></div>
                             <div class="inp-group">
-                                <input type="password" id="sConf" placeholder=" " required autocomplete="new-password">
+                                <input type="password" id="sConf" name="confirm" placeholder=" " required autocomplete="new-password">
                                 <i class="fas fa-shield-halved inp-icon"></i>
                                 <label class="float-label" for="sConf">Confirm Password</label>
                                 <button type="button" class="pw-eye" onclick="togglePw('sConf',this)"><i class="fas fa-eye"></i></button>
                                 <span class="vmsg" id="sConfMsg"></span>
                             </div>
+                            <!-- ... rest of signup form ... -->
                             <label class="chk-row" style="margin-bottom:10px"><input type="checkbox" id="agreeChk" required><span class="chk-box"><i class="fas fa-check"></i></span>I agree to the Terms & Conditions</label>
                             <button type="submit" class="submit-btn" id="signupBtn">SIGN UP<div class="spin"><span class="sdot"></span><span class="sdot"></span><span class="sdot"></span></div><div class="chk-icon"><i class="fas fa-check" style="color:#fff;font-size:18px"></i></div></button>
                         </form>
-                        <div class="divider"><span>or</span></div>
+                        <!-- <div class="divider"><span>or</span></div>
                         <div class="social-row">
                             <button class="soc-btn" onclick="showToast('Google auth not connected yet.','info')"><i class="fab fa-google"></i></button>
                             <button class="soc-btn" onclick="showToast('Facebook auth not connected yet.','info')"><i class="fab fa-facebook-f"></i></button>
                             <button class="soc-btn" onclick="showToast('GitHub auth not connected yet.','info')"><i class="fab fa-github"></i></button>
-                        </div>
+                        </div> -->
                     </div>
                 </div>
 
@@ -494,8 +560,8 @@
             });
         });
 
-        /* Login */
-        function handleLogin(e) {
+                /* Login */
+        async function handleLogin(e) {
             e.preventDefault();
             let ok = true;
             const em = document.getElementById('lEmail').value.trim();
@@ -507,13 +573,31 @@
             else if (pw.length < 6) { showV('lPwMsg','At least 6 characters.','err'); ok=false; }
             else clearV('lPwMsg');
             if (!ok) return;
+
             const btn = document.getElementById('loginBtn');
             btn.classList.add('loading');
-            setTimeout(() => { btn.classList.remove('loading'); btn.classList.add('done'); showToast('Welcome back! Redirecting...','success'); setTimeout(() => { btn.classList.remove('done'); }, 2000); }, 1800);
+
+            try {
+                const formData = new FormData(document.getElementById('loginForm'));
+                const response = await fetch('register.php', { method: 'POST', body: formData });
+                const data = await response.json();
+
+                btn.classList.remove('loading');
+                if (data.status === 'success') {
+                    btn.classList.add('done'); 
+                    showToast(data.message, 'success'); 
+                    setTimeout(() => { window.location.href = 'dashboard.php'; }, 1500); // Change dashboard.php to your target page
+                } else {
+                    showToast(data.message, 'error');
+                }
+            } catch (error) {
+                btn.classList.remove('loading');
+                showToast('An error occurred. Please try again.', 'error');
+            }
         }
 
         /* Signup */
-        function handleSignup(e) {
+        async function handleSignup(e) {
             e.preventDefault();
             let ok = true;
             const nm = document.getElementById('sName').value.trim();
@@ -535,9 +619,27 @@
             else clearV('sConfMsg');
             if (!ag) { showToast('You must agree to the Terms & Conditions.','error'); ok=false; }
             if (!ok) return;
+
             const btn = document.getElementById('signupBtn');
             btn.classList.add('loading');
-            setTimeout(() => { btn.classList.remove('loading'); btn.classList.add('done'); showToast('Account created! Redirecting...','success'); setTimeout(() => { btn.classList.remove('done'); }, 2000); }, 2000);
+
+            try {
+                const formData = new FormData(document.getElementById('signupForm'));
+                const response = await fetch('register.php', { method: 'POST', body: formData });
+                const data = await response.json();
+
+                btn.classList.remove('loading');
+                if (data.status === 'success') {
+                    btn.classList.add('done'); 
+                    showToast(data.message, 'success'); 
+                    setTimeout(() => { window.location.href = 'register.php'; }, 1500); // Change dashboard.php to your target page
+                } else {
+                    showToast(data.message, 'error');
+                }
+            } catch (error) {
+                btn.classList.remove('loading');
+                showToast('An error occurred. Please try again.', 'error');
+            }
         }
 
         /* Toast */
