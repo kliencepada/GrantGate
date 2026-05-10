@@ -7,48 +7,57 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
     header('Content-Type: application/json');
     $action = $_POST['action'];
 
-    if ($action === 'login') {
-        $email = trim($_POST['email'] ?? '');
-        $password = $_POST['password'] ?? '';
+    try {
+        if ($action === 'login') {
+            $email = trim($_POST['email'] ?? '');
+            $password = $_POST['password'] ?? '';
 
-        $stmt = $pdo->prepare("SELECT * FROM tbl_users WHERE email = ?");
-        $stmt->execute([$email]);
-        $user = $stmt->fetch(PDO::FETCH_ASSOC);
+            $stmt = $pdo->prepare("SELECT * FROM tbl_users WHERE email = ?");
+            $stmt->execute([$email]);
+            $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
-        if ($user && $user['password'] === $password) { // No hashing as requested
-            $_SESSION['user_id'] = $user['user_id'];
-            $_SESSION['fullname'] = $user['fullname'];
-            echo json_encode(['status' => 'success', 'message' => 'Welcome back! Redirecting...']);
-        } else {
-            echo json_encode(['status' => 'error', 'message' => 'Invalid email or password.']);
-        }
-        exit;
-    }
-
-    if ($action === 'signup') {
-        $fullname = trim($_POST['fullname'] ?? '');
-        $email = trim($_POST['email'] ?? '');
-        $password = $_POST['password'] ?? '';
-        $confirm = $_POST['confirm'] ?? '';
-
-        if ($password !== $confirm) {
-            echo json_encode(['status' => 'error', 'message' => 'Passwords do not match.']);
+            if ($user && $user['password'] === $password) { // No hashing as requested
+                $_SESSION['user_id'] = $user['user_id'];
+                $_SESSION['firstname'] = $user['firstname'] ?? '';
+                $_SESSION['lastname'] = $user['lastname'] ?? '';
+                echo json_encode(['status' => 'success', 'message' => 'Welcome back! Redirecting...']);
+            } else {
+                echo json_encode(['status' => 'error', 'message' => 'Invalid email or password.']);
+            }
             exit;
         }
 
-        $stmt = $pdo->prepare("SELECT user_id FROM tbl_users WHERE email = ?");
-        $stmt->execute([$email]);
-        if ($stmt->fetch()) {
-            echo json_encode(['status' => 'error', 'message' => 'Email already exists.']);
+        if ($action === 'signup') {
+            $firstname = trim($_POST['firstname'] ?? '');
+            $lastname = trim($_POST['lastname'] ?? '');
+            $email = trim($_POST['email'] ?? '');
+            $password = $_POST['password'] ?? '';
+            $confirm = $_POST['confirm'] ?? '';
+
+            if ($password !== $confirm) {
+                echo json_encode(['status' => 'error', 'message' => 'Passwords do not match.']);
+                exit;
+            }
+
+            $stmt = $pdo->prepare("SELECT user_id FROM tbl_users WHERE email = ?");
+            $stmt->execute([$email]);
+            if ($stmt->fetch()) {
+                echo json_encode(['status' => 'error', 'message' => 'Email already exists.']);
+                exit;
+            }
+
+            // Inserting directly into firstname and lastname columns
+            $stmt = $pdo->prepare("INSERT INTO tbl_users (firstname, lastname, email, password, created_at) VALUES (?, ?, ?, ?, NOW())");
+            if ($stmt->execute([$firstname, $lastname, $email, $password])) {
+                echo json_encode(['status' => 'success', 'message' => 'Account created! Redirecting...']);
+            } else {
+                echo json_encode(['status' => 'error', 'message' => 'Something went wrong. Please try again.']);
+            }
             exit;
         }
-
-        $stmt = $pdo->prepare("INSERT INTO tbl_users (fullname, email, password, created_at) VALUES (?, ?, ?, NOW())");
-        if ($stmt->execute([$fullname, $email, $password])) {
-            echo json_encode(['status' => 'success', 'message' => 'Account created! Redirecting...']);
-        } else {
-            echo json_encode(['status' => 'error', 'message' => 'Something went wrong. Please try again.']);
-        }
+    } catch (Exception $e) {
+        // If there's a database error, it returns it as a JSON message instead of breaking the JS
+        echo json_encode(['status' => 'error', 'message' => 'DB Error: ' . $e->getMessage()]);
         exit;
     }
 }
@@ -392,13 +401,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                     <div class="form-inner">
                         <div class="form-title">Create <span class="green">Account</span></div>
                         <div class="form-sub">Register and start your application today</div>
-                                                <form id="signupForm" onsubmit="handleSignup(event)" novalidate>
+                        <form id="signupForm" onsubmit="handleSignup(event)" novalidate>
                             <input type="hidden" name="action" value="signup">
                             <div class="inp-group">
-                                <input type="text" id="sName" name="name" placeholder=" " required autocomplete="name">
+                                <input type="text" id="sFirstname" name="firstname" placeholder=" " required autocomplete="given-name">
                                 <i class="fas fa-user inp-icon"></i>
-                                <label class="float-label" for="sName">Full Name</label>
-                                <span class="vmsg" id="sNameMsg"></span>
+                                <label class="float-label" for="sFirstname">First Name</label>
+                                <span class="vmsg" id="sFirstnameMsg"></span>
+                            </div>
+                            <div class="inp-group">
+                                <input type="text" id="sLastname" name="lastname" placeholder=" " required autocomplete="family-name">
+                                <i class="fas fa-user inp-icon"></i>
+                                <label class="float-label" for="sLastname">Last Name</label>
+                                <span class="vmsg" id="sLastnameMsg"></span>
                             </div>
                             <div class="inp-group">
                                 <input type="email" id="sEmail" name="email" placeholder=" " required autocomplete="email">
@@ -580,7 +595,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             try {
                 const formData = new FormData(document.getElementById('loginForm'));
                 const response = await fetch('register.php', { method: 'POST', body: formData });
-                const data = await response.json();
+                const text = await response.text();
+                try { var data = JSON.parse(text); } catch(e) { throw new Error("Server: " + text.substring(0,150)); }
 
                 btn.classList.remove('loading');
                 if (data.status === 'success') {
@@ -600,14 +616,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
         async function handleSignup(e) {
             e.preventDefault();
             let ok = true;
-            const nm = document.getElementById('sName').value.trim();
+            const fn = document.getElementById('sFirstname').value.trim();
+            const ln = document.getElementById('sLastname').value.trim();
             const em = document.getElementById('sEmail').value.trim();
             const pw = document.getElementById('sPw').value;
             const cf = document.getElementById('sConf').value;
             const ag = document.getElementById('agreeChk').checked;
-            if (!nm) { showV('sNameMsg','Full name is required.','err'); ok=false; }
-            else if (nm.length < 2) { showV('sNameMsg','At least 2 characters.','err'); ok=false; }
-            else clearV('sNameMsg');
+            if (!fn) { showV('sFirstnameMsg','First name is required.','err'); ok=false; }
+            else if (fn.length < 2) { showV('sFirstnameMsg','At least 2 characters.','err'); ok=false; }
+            else clearV('sFirstnameMsg');
+            if (!ln) { showV('sLastnameMsg','Last name is required.','err'); ok=false; }
+            else if (ln.length < 2) { showV('sLastnameMsg','At least 2 characters.','err'); ok=false; }
+            else clearV('sLastnameMsg');
             if (!em) { showV('sEmailMsg','Email is required.','err'); ok=false; }
             else if (!isEmail(em)) { showV('sEmailMsg','Enter a valid email.','err'); ok=false; }
             else clearV('sEmailMsg');
@@ -626,7 +646,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             try {
                 const formData = new FormData(document.getElementById('signupForm'));
                 const response = await fetch('register.php', { method: 'POST', body: formData });
-                const data = await response.json();
+                const text = await response.text();
+                try { var data = JSON.parse(text); } catch(e) { throw new Error("Server: " + text.substring(0,150)); }
 
                 btn.classList.remove('loading');
                 if (data.status === 'success') {
