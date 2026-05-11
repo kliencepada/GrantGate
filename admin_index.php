@@ -214,9 +214,9 @@ if (isset($_SESSION['admin_id'])) {
             <a href="admin_index.php" class="logo">GRANT<span>GATE</span></a>
             <div class="admin-badge"><i class="fas fa-shield-halved"></i> Admin</div>
         </div>
-        <div class="nav-right">
+        <!-- <div class="nav-right">
             <a href="landing_page.php"><i class="fas fa-arrow-left"></i> Student Portal</a>
-        </div>
+        </div> -->
     </div>
 
     <!-- HERO -->

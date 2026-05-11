@@ -10,6 +10,16 @@ if (!isset($_SESSION['user_id'])) {
 
  $user_id = $_SESSION['user_id'];
 
+// Fetch existing personal info to check if form is already filled
+ $existingInfo = null;
+try {
+    $checkStmt = $pdo->prepare("SELECT * FROM tbl_personal_info WHERE user_id = ?");
+    $checkStmt->execute([$user_id]);
+    $existingInfo = $checkStmt->fetch(PDO::FETCH_ASSOC);
+} catch (PDOException $e) {
+    // Ignore fetch errors here, form will just start fresh
+}
+
 // Handle Logout
 if (isset($_GET['logout'])) {
     session_destroy();
@@ -414,7 +424,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             </div>
 
             <div class="form-card">
-                <h2><i class="fas fa-wallet"></i>Family Income</h2>
+                <h2><i class="fas fa-wallet"></i>Parent / Guardian</h2>
                 <div class="form-row">
                     <div class="field">
                         <label>Parent/Guardian Name</label>
