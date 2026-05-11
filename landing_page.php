@@ -55,10 +55,11 @@
         .nav-links li a:hover::before, .nav-links li a.active::before { width: 100%; filter: drop-shadow(0 0 15px var(--green)); }
 
         /* --- HOME SECTION --- */
-        #home { 
-            height: 100vh; position: relative; overflow: hidden; 
-            display: flex; align-items: center; 
-        }
+            #home { 
+                height: 100vh; position: relative; overflow: hidden; 
+                display: flex; align-items: center; 
+                padding-left: 6%; /* Adds consistent breathing room from the left edge */
+            }
 
         .white-bg-layer { 
             position: absolute; background: #ffffff; width: 190vh; height: 190vh; 
@@ -94,7 +95,11 @@
 
         /* Content box */
         .content-box { 
-            position: relative; margin-left: 8%; width: 600px; z-index: 10; 
+            position: relative; 
+            width: 100%;           /* Allows it to scale responsively */
+            max-width: 680px;      /* Prevents it from getting too wide on large screens */
+            z-index: 10; 
+            margin-top: -5vh;      /* Lifts the text slightly above dead-center for better visual balance */
         }
 
         /* Small label above heading */
@@ -118,14 +123,15 @@
         }
 
         /* Heading */
-        .content-box h1 { 
-            font-size: 4.5rem; font-weight: 800; line-height: 1.05; 
-            color: #111; text-transform: uppercase; margin-bottom: 8px;
-        }
+            .content-box h1 { 
+                font-size: 4.8rem; 
+                font-weight: 800; line-height: 1.05; 
+                color: #111; text-transform: uppercase; margin-bottom: 12px;
+            }
 
-        .content-box h1 .line-green {
-            color: var(--green); display: block; font-size: 3.8rem;
-        }
+.content-box h1 .line-green {
+    color: var(--green); display: block; font-size: 4rem; /* Slightly closer in size to the first line */
+}
 
         /* Letter-by-letter reveal */
         .rl {
@@ -152,12 +158,13 @@
         }
 
         /* Subtitle */
-        .content-box .subtitle {
-            font-size: 1.1rem; color: #555; line-height: 1.7;
-            max-width: 480px; margin-bottom: 32px;
-            opacity: 0; transform: translateY(20px);
-            animation: fadeUp 0.7s 1.8s cubic-bezier(0.22, 1, 0.36, 1) forwards;
-        }
+.content-box .subtitle {
+    font-size: 1.1rem; color: #555; line-height: 1.7;
+    max-width: 540px;     /* Widened slightly to match the new content box */
+    margin-bottom: 32px;
+    opacity: 0; transform: translateY(20px);
+    animation: fadeUp 0.7s 1.8s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
 
         @keyframes fadeUp {
             to { opacity: 1; transform: translateY(0); }

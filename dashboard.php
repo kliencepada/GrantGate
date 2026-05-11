@@ -324,6 +324,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             .main-content{margin-left:0;padding:20px}
             .topbar{padding:0 16px}
         }
+
+                /* Mandatory field error styling */
+        .field input.invalid, 
+        .field select.invalid {
+            border-color: var(--danger) !important;
+            box-shadow: 0 0 0 3px rgba(255,71,87,0.2) !important;
+        }
     </style>
 </head>
 <body>
@@ -629,6 +636,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
 
         // Check if user already has data from PHP
         const hasExistingInfo = <?= $existingInfo ? 'true' : 'false' ?>;
+        const appStatus = '<?= htmlspecialchars($existingInfo['app_status'] ?? 'pending') ?>';
+        const isLocked = (appStatus === 'approved' || appStatus === 'rejected');
 
         if (hasExistingInfo) {
             currentStep = 4; // Skip straight to status/summary
@@ -647,33 +656,73 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             updateUI();
         }
 
-        async function nextStep(step) {
-    if (step === 2) {
-        // Save personal info to database first
-        const btn = document.querySelector('#step1 .btn-primary');
-        btn.innerHTML = 'Saving... <i class="fas fa-spinner fa-spin"></i>';
-        btn.disabled = true;
-
-        const data = new URLSearchParams();
-        data.append('action', 'save_personal_info');
-        
-        // Collect inputs by their name attribute
-        document.querySelectorAll('#step1 input, #step1 select').forEach(el => {
-            if (el.name) data.append(el.name, el.value);
-        });
-
-        try {
-            const res = await fetch('dashboard.php', { method: 'POST', body: data });
-            const json = await res.json();
-            if (json.status === 'success') {
-                completedSteps.add(currentStep);
-                currentStep = step;
-                updateUI();
-                showToast(json.message, 'success');
-            } else {
-                showToast(json.message || 'Failed to save info.', 'error');
-                return; // Stop from moving to next step
+                async function nextStep(step) {
+            // Block saving if application is locked
+            if (isLocked) {
+                showToast('Your application has been ' + appStatus + '. Editing is disabled.', 'error');
+                return;
             }
+
+            if (step === 2) {
+                // === VALIDATION: CHECK ALL MANDATORY FIELDS ===
+                let allFilled = true;
+                const requiredFields = document.querySelectorAll('#step1 input, #step1 select');
+                
+                requiredFields.forEach(el => {
+                    el.classList.remove('invalid'); // remove previous error styling
+                    if (!el.value.trim()) {
+                        allFilled = false;
+                        el.classList.add('invalid'); // add red border styling
+                    }
+                });
+
+                if (!allFilled) {
+                    showToast('All fields are mandatory. Please complete the form.', 'error');
+                    return; // Stop them from proceeding
+                }
+
+                // Save personal info to database first
+                const btn = document.querySelector('#step1 .btn-primary');
+                btn.innerHTML = 'Saving... <i class="fas fa-spinner fa-spin"></i>';
+                btn.disabled = true;
+
+                const data = new URLSearchParams();
+                data.append('action', 'save_personal_info');
+                
+                // Collect inputs by their name attribute
+                document.querySelectorAll('#step1 input, #step1 select').forEach(el => {
+                    if (el.name) data.append(el.name, el.value);
+                });
+
+                try {
+                    const res = await fetch('dashboard.php', { method: 'POST', body: data });
+                    const json = await res.json();
+                    if (json.status === 'success') {
+                        completedSteps.add(currentStep);
+                        currentStep = step;
+                        updateUI();
+                        showToast(json.message, 'success');
+                    } else {
+                        showToast(json.message || 'Failed to save info.', 'error');
+                        return; // Stop from moving to next step
+                    }
+                } catch(e) {
+                    showToast('Network error. Failed to save info.', 'error');
+                    return;
+                }
+                
+                btn.innerHTML = 'Next Step <i class="fas fa-arrow-right"></i>';
+                btn.disabled = false;
+                return;
+            }
+
+            // Default behavior for other steps
+            completedSteps.add(currentStep);
+            currentStep = step;
+            updateUI();
+            if (step === 3) buildSummary();
+            showToast('Step ' + (step - 1) + ' completed!', 'success');
+        }
         } catch(e) {
             showToast('Network error. Failed to save info.', 'error');
             return;
@@ -795,6 +844,76 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
     input.value = ''; // Reset file input
 }
 
+        /* ===== POPULATE FORM IF DATA EXISTS ===== */
+        function populateForm() {
+            if (!hasExistingInfo) return;
+            const data = <?= json_encode($existingInfo ?? []) ?>;
+            const map = {
+                firstname: 'fname', lastname: 'lname', birthday: 'dob', gender: 'gender',
+                contact_no: 'phone', email_add: 'email', home_address: 'address',
+                guardian_fullname: 'parentName', guardian_contact_no: 'parentPhone',
+                occupation: 'occupation', income: 'income', school: 'school',
+                year_level: 'yearLevel', course: 'course', gwa: 'gwa'
+            };
+            Object.keys(map).forEach(key => {
+                const el = document.getElementById(map[key]);
+                if (el && data[key]) el.value = data[key];
+            });
+        }
+
+        /* ===== LOCK FORM IF APPROVED/REJECTED ===== */
+        function applyLockRules() {
+            if (isLocked) {
+                // Disable all form inputs and selects
+                document.querySelectorAll('#step1 input, #step1 select').forEach(el => {
+                    el.disabled = true;
+                    el.style.opacity = '0.5';
+                    el.style.cursor = 'not-allowed';
+                });
+
+                // Disable the "Next Step" save button on step 1
+                const step1Btn = document.querySelector('#step1 .btn-primary');
+                if (step1Btn) {
+                    step1Btn.disabled = true;
+                    step1Btn.style.opacity = '0.5';
+                    step1Btn.style.cursor = 'not-allowed';
+                    step1Btn.innerHTML = '<i class="fas fa-lock"></i> Application Locked';
+                }
+
+                // Disable all file upload inputs
+                document.querySelectorAll('#step2 input[type="file"]').forEach(el => {
+                    el.disabled = true;
+                    el.style.opacity = '0.5';
+                    el.style.cursor = 'not-allowed';
+                });
+
+                // Hide the "Update Application" button on Step 4
+                const updateBtn = document.querySelector('#step4 .btn-secondary');
+                if (updateBtn && updateBtn.textContent.includes('Update')) {
+                    updateBtn.style.display = 'none';
+                }
+
+                // Add a visual lock notice to Step 1
+                const step1Panel = document.getElementById('step1');
+                const lockNotice = document.createElement('div');
+                lockNotice.style.cssText = 'background:rgba(255,71,87,0.1);border:1px solid rgba(255,71,87,0.3);color:#fca5a5;padding:14px 20px;border-radius:10px;margin-bottom:24px;display:flex;align-items:center;gap:10px;font-size:14px;font-weight:600';
+                lockNotice.innerHTML = '<i class="fas fa-lock"></i> Your application has been ' + appStatus + '. Editing is no longer allowed.';
+                step1Panel.insertBefore(lockNotice, step1Panel.firstChild.nextSibling.nextSibling); // Insert after page-header
+
+                // Disable Step 2 submit buttons too
+                document.querySelectorAll('#step2 .btn-primary, #step2 .upload-zone').forEach(el => {
+                    el.style.pointerEvents = 'none';
+                    el.style.opacity = '0.5';
+                });
+            }
+        }
+
+        // Run on load
+        populateForm();
+        applyLockRules();
+        updateUI(); // Ensure UI matches the currentStep set earlier
+
+
         /* ===== TOAST ===== */
         function showToast(msg, type) {
             const box = document.getElementById('toastBox');
@@ -805,6 +924,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             box.appendChild(t);
             setTimeout(() => { t.classList.add('out'); t.addEventListener('animationend', () => t.remove()); }, 3500);
         }
+
+                // Clear red validation borders when user starts typing/selecting
+        document.querySelectorAll('#step1 input, #step1 select').forEach(el => {
+            el.addEventListener('input', () => el.classList.remove('invalid'));
+            el.addEventListener('change', () => el.classList.remove('invalid'));
+        });
     </script>
 </body>
 </html>
