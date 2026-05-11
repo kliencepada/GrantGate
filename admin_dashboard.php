@@ -359,7 +359,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                 <div class="topbar-avatar">AD</div>
                 <span><?= htmlspecialchars($_SESSION['admin_username'] ?? 'Admin') ?></span>
             </div>
-            <a href="admin_dashboard.php?logout=true" class="logout-btn"><i class="fas fa-sign-out-alt"></i> Logout</a>
+            <a href="admin_index.php?logout=true" class="logout-btn"><i class="fas fa-sign-out-alt"></i> Logout</a>
         </div>
     </div>
 
