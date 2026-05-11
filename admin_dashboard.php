@@ -12,7 +12,7 @@ if (!isset($_SESSION['admin_id'])) {
 if (isset($_GET['logout'])) {
     session_unset();
     session_destroy();
-    header('Location: admin_login.php');
+    header('Location: admin_index.php');
     exit;
 }
 
