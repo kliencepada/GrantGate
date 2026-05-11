@@ -1,6 +1,21 @@
 <?php 
 session_start(); 
-require_once 'db_conn.php'; // Make sure this file connects to your database
+require_once 'db_conn.php';
+
+// Protect this page — only allow logged-in admins
+if (!isset($_SESSION['admin_id'])) {
+    header('Location: admin_login.php');
+    exit;
+}
+
+// Handle Logout
+if (isset($_GET['logout'])) {
+    session_unset();
+    session_destroy();
+    header('Location: admin_login.php');
+    exit;
+}
+
 
 // Fetch all personal info joined with users and requirements
 try {
