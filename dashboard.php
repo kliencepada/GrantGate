@@ -569,12 +569,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                 <p>Track the progress of your scholarship application below.</p>
             </div>
 
+            <?php 
+                $appStatus = $existingInfo['app_status'] ?? 'pending';
+                $statusIcon = $appStatus === 'approved' ? 'approved' : ($appStatus === 'rejected' ? 'rejected' : 'pending');
+                $statusText = ucfirst($appStatus);
+                
+                $statusDesc = match($appStatus) {
+                    'approved' => 'Congratulations! Your scholarship application has been approved. Check your profile for further instructions.',
+                    'rejected' => 'We\'re sorry, your application was not approved. You may review your details or contact the admin for more information.',
+                    default => 'Your application has been submitted and is currently being reviewed by our admin team. You will be notified once a decision has been made.'
+                };
+            ?>
+
             <div class="status-card" id="statusCard">
-                <div class="status-icon pending" id="statusIcon">
-                    <i class="fas fa-clock"></i>
+                <div class="status-icon <?= $statusIcon ?>" id="statusIcon">
+                    <i class="fas fa-<?= $appStatus === 'approved' ? 'check-circle' : ($appStatus === 'rejected' ? 'times-circle' : 'clock') ?>"></i>
                 </div>
-                <h2 id="statusTitle">Pending Review</h2>
-                <p id="statusDesc">Your application has been submitted and is currently being reviewed by our admin team. You will be notified once a decision has been made.</p>
+                <h2 id="statusTitle"><?= $statusText ?></h2>
+                <p id="statusDesc"><?= $statusDesc ?></p>
 
                 <div class="status-timeline" id="statusTimeline">
                     <div class="timeline-item">
@@ -585,19 +597,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                         </div>
                     </div>
                     <div class="timeline-item">
-                        <div class="timeline-dot current" id="timelineCurrent"></div>
+                        <div class="timeline-dot <?= $appStatus !== 'pending' ? 'done' : 'current' ?>" id="timelineCurrent"></div>
                         <div class="timeline-text">
-                            <h4 id="timelineCurrentText">Under Admin Review</h4>
-                            <p id="timelineCurrentDesc">Admin is verifying your documents and information.</p>
+                            <h4 id="timelineCurrentText"><?= $appStatus !== 'pending' ? 'Reviewed' : 'Under Admin Review' ?></h4>
+                            <p id="timelineCurrentDesc"><?= $appStatus !== 'pending' ? 'Admin has reviewed your application.' : 'Admin is verifying your documents and information.' ?></p>
                         </div>
                     </div>
                     <div class="timeline-item">
-                        <div class="timeline-dot" id="timelineFinal"></div>
+                        <div class="timeline-dot <?= $appStatus !== 'pending' ? 'done' : '' ?>" id="timelineFinal"></div>
                         <div class="timeline-text">
                             <h4 id="timelineFinalText">Result Notification</h4>
-                            <p id="timelineFinalDesc">You will receive the result via portal, SMS, or email.</p>
+                            <p id="timelineFinalDesc"><?= $appStatus !== 'pending' ? 'A decision has been made.' : 'You will receive the result via portal, SMS, or email.' ?></p>
                         </div>
                     </div>
+                </div>
+                
+                <!-- Update Button -->
+                <div style="margin-top: 32px; display: flex; justify-content: center; gap: 12px; flex-wrap: wrap;">
+                    <button class="btn btn-secondary" onclick="goToStep(1)"><i class="fas fa-pen"></i> Update Application</button>
+                    <a href="student_profile.php" class="btn btn-primary" style="text-decoration:none"><i class="fas fa-user-circle"></i> View Full Profile</a>
                 </div>
             </div>
         </div>
@@ -605,9 +623,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
     </div>
 
     <script>
-        let currentStep = 1;
+                let currentStep = 1;
         const completedSteps = new Set();
         let isSubmitted = false;
+
+        // Check if user already has data from PHP
+        const hasExistingInfo = <?= $existingInfo ? 'true' : 'false' ?>;
+
+        if (hasExistingInfo) {
+            currentStep = 4; // Skip straight to status/summary
+            completedSteps.add(1);
+            completedSteps.add(2);
+            completedSteps.add(3);
+            isSubmitted = true;
+        }
 
         function goToStep(step) {
             if (step > currentStep && !completedSteps.has(step - 1) && step !== 1) {
