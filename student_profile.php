@@ -1,5 +1,6 @@
 <?php
-session_start();
+session_start(); 
+ob_start();
 require_once 'db_conn.php';
 
 if (!isset($_SESSION['user_id'])) {
@@ -71,8 +72,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             exit;
         }
 
-        // CHANGE PASSWORD
+                // CHANGE PASSWORD
         if ($_POST['action'] === 'change_password') {
+            ob_clean();
+            header('Content-Type: application/json');
             $current = $_POST['current_password'] ?? '';
             $new = $_POST['new_password'] ?? '';
             $confirm = $_POST['confirm_password'] ?? '';
@@ -86,7 +89,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             $pwStmt->execute([$user_id]);
             $user = $pwStmt->fetch(PDO::FETCH_ASSOC);
 
-            if (!password_verify($current, $user['password'])) {
+            if (!$user) {
+                echo json_encode(['status' => 'error', 'message' => 'User not found.']);
+                exit;
+            }
+
+            // Support password_hash(), md5(), and plain text
+            $passwordValid = false;
+            $storedPw = $user['password'];
+            if (password_verify($current, $storedPw)) {
+                $passwordValid = true;
+            } elseif (md5($current) === $storedPw) {
+                $passwordValid = true;
+            } elseif ($current === $storedPw) {
+                // Plain text fallback
+                $passwordValid = true;
+            }
+
+            if (!$passwordValid) {
                 echo json_encode(['status' => 'error', 'message' => 'Current password is incorrect.']);
                 exit;
             }
@@ -228,8 +248,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             width:72px;height:72px;border-radius:50%;
             background:linear-gradient(135deg,#00c853,#1de9b6);
             display:flex;align-items:center;justify-content:center;
-            font-family:'Orbitron',sans-serif;font-size:1.5rem;font-weight:900;color:#fff;
-            margin:0 auto 14px;position:relative;
+            font-family:'Orbitron',sans-serif;font-size:1.3rem;font-weight:900;color:#fff;
+            margin:0 auto 14px;position:relative;letter-spacing:0.05em;
         }
         .sidebar-avatar .status-dot{
             position:absolute;bottom:2px;right:2px;width:14px;height:14px;
@@ -305,8 +325,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             width:100px;height:100px;border-radius:50%;
             background:linear-gradient(135deg,#00c853,#1de9b6);
             display:flex;align-items:center;justify-content:center;
-            font-family:'Orbitron',sans-serif;font-size:2.2rem;font-weight:900;color:#fff;
-            flex-shrink:0;position:relative;
+            font-family:'Orbitron',sans-serif;font-size:1.8rem;font-weight:900;color:#fff;
+            flex-shrink:0;position:relative;letter-spacing:0.05em;
         }
         .profile-hero-avatar .edit-badge{
             position:absolute;bottom:0;right:0;width:30px;height:30px;
@@ -529,10 +549,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
     <nav class="sidebar">
         <div class="sidebar-profile">
             <div class="sidebar-avatar">
-                <?= strtoupper(substr($profile['firstname'] ?? 'U', 0, 1)) ?>
+                <?= strtoupper(substr($_SESSION['firstname'] ?? 'U', 0, 1)) ?><?= strtoupper(substr($_SESSION['lastname'] ?? '', 0, 1)) ?>
                 <div class="status-dot <?= $profile['app_status'] ?? 'pending' ?>"></div>
             </div>
-            <div class="sidebar-name"><?= htmlspecialchars(($profile['firstname'] ?? '') . ' ' . ($profile['lastname'] ?? '')) ?></div>
+            <div class="sidebar-name"><?= htmlspecialchars(($_SESSION['firstname'] ?? '') . ' ' . ($_SESSION['lastname'] ?? '')) ?></div>
             <div class="sidebar-email"><?= htmlspecialchars($profile['email'] ?? $profile['email_add'] ?? '') ?></div>
             <div class="sidebar-badge">
                 <span class="badge <?= $profile['app_status'] ?? 'pending' ?>">
@@ -652,7 +672,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
         <div class="panel active" id="panel-overview">
             <div class="profile-hero">
                 <div class="profile-hero-avatar">
-                    <?= strtoupper(substr($profile['firstname'] ?? 'U', 0, 1)) ?>
+                    <?= strtoupper(substr($_SESSION['firstname'] ?? 'U', 0, 1)) ?><?= strtoupper(substr($_SESSION['lastname'] ?? '', 0, 1)) ?>
                 </div>
                 <div class="profile-hero-info">
                     <h2><?= htmlspecialchars(($profile['firstname'] ?? '') . ' ' . ($profile['lastname'] ?? '')) ?></h2>

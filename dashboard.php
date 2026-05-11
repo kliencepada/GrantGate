@@ -140,7 +140,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
         .topbar-logo{font-family:'Orbitron',sans-serif;font-size:1.3rem;font-weight:900;color:#fff}
         .topbar-logo span{color:var(--green)}
         .topbar-right{display:flex;align-items:center;gap:16px}
-        .topbar-user{display:flex;align-items:center;gap:10px;color:var(--muted);font-size:14px;font-weight:500}
+        .topbar-user{display:flex;align-items:center;gap:10px;color:var(--muted);font-size:14px;font-weight:500;text-decoration:none;cursor:pointer;transition:all 0.3s;border-radius:50px;padding:8px 8px;margin-right:-8px}
+        .topbar-user:hover{color:var(--fg);background:rgba(255,255,255,0.05)}
+        .topbar-user:hover .topbar-avatar{box-shadow:0 0 0 2px var(--green)}
         .topbar-avatar{width:36px;height:36px;border-radius:50%;background:var(--green);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:14px}
         .logout-btn{background:rgba(255,71,87,0.1);border:1px solid rgba(255,71,87,0.3);color:#ff6b7a;padding:8px 18px;border-radius:8px;font-family:'Poppins',sans-serif;font-size:13px;font-weight:600;cursor:pointer;transition:all 0.3s;text-decoration:none}
         .logout-btn:hover{background:var(--danger);color:#fff;border-color:var(--danger)}
@@ -320,10 +322,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
     <div class="topbar">
         <div class="topbar-logo">GRANT<span>GATE</span></div>
         <div class="topbar-right">
-            <div class="topbar-user">
+            <a href="student_profile.php" class="topbar-user">
                 <div class="topbar-avatar"><?= strtoupper(substr($_SESSION['firstname'] ?? 'U', 0, 1)) ?></div>
                 <span><?= htmlspecialchars(($_SESSION['firstname'] ?? '') . ' ' . ($_SESSION['lastname'] ?? '')) ?></span>
-            </div>
+            </a>
             <a href="dashboard.php?logout=true" class="logout-btn"><i class="fas fa-sign-out-alt"></i> Logout</a>
         </div>
     </div>

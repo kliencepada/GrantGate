@@ -8,7 +8,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
     $action = $_POST['action'];
 
     try {
-        if ($action === 'login') {
+                if ($action === 'login') {
             $email = trim($_POST['email'] ?? '');
             $password = $_POST['password'] ?? '';
 
@@ -16,14 +16,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             $stmt->execute([$email]);
             $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
-            if ($user && $user['password'] === $password) { // No hashing as requested
-                $_SESSION['user_id'] = $user['user_id'];
-                $_SESSION['firstname'] = $user['firstname'] ?? '';
-                $_SESSION['lastname'] = $user['lastname'] ?? '';
-                echo json_encode(['status' => 'success', 'message' => 'Welcome back! Redirecting...']);
-            } else {
-                echo json_encode(['status' => 'error', 'message' => 'Invalid email or password.']);
+            if ($user) {
+                // Support both password_hash() and legacy plain text
+                $passwordValid = false;
+                if (password_verify($password, $user['password'])) {
+                    $passwordValid = true;
+                } elseif ($user['password'] === $password) {
+                    // Legacy plain text match — upgrade it to hashed
+                    $passwordValid = true;
+                    $upgrade = $pdo->prepare("UPDATE tbl_users SET password = ? WHERE user_id = ?");
+                    $upgrade->execute([password_hash($password, PASSWORD_DEFAULT), $user['user_id']]);
+                }
+
+                if ($passwordValid) {
+                    $_SESSION['user_id'] = $user['user_id'];
+                    $_SESSION['firstname'] = $user['firstname'] ?? '';
+                    $_SESSION['lastname'] = $user['lastname'] ?? '';
+                    echo json_encode(['status' => 'success', 'message' => 'Welcome back! Redirecting...']);
+                    exit;
+                }
             }
+
+            // If we reach here, login failed
+            echo json_encode(['status' => 'error', 'message' => 'Invalid email or password.']);
             exit;
         }
 
@@ -46,9 +61,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                 exit;
             }
 
-            // Inserting directly into firstname and lastname columns
+            // Hash the password securely before saving
+            $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
             $stmt = $pdo->prepare("INSERT INTO tbl_users (firstname, lastname, email, password, created_at) VALUES (?, ?, ?, ?, NOW())");
-            if ($stmt->execute([$firstname, $lastname, $email, $password])) {
+            if ($stmt->execute([$firstname, $lastname, $email, $hashedPassword])) {
                 echo json_encode(['status' => 'success', 'message' => 'Account created! Redirecting...']);
             } else {
                 echo json_encode(['status' => 'error', 'message' => 'Something went wrong. Please try again.']);
