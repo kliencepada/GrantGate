@@ -179,7 +179,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                 </button>
             </form>
 
-            <a href="landing_page.php" class="back-link"><i class="fas fa-arrow-left"></i> Back to Homepage</a>
+            <a href="admin_index.php" class="back-link"><i class="fas fa-arrow-left"></i> Back to Admin Portal</a>
         </div>
     </div>
 
