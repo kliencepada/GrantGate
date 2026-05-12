@@ -399,7 +399,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                             </div>
                             <div class="form-extras">
                                 <label class="chk-row"><input type="checkbox"><span class="chk-box"><i class="fas fa-check"></i></span>Remember me</label>
-                                <a href="#" class="forgot" onclick="showToast('Check your email for reset instructions.','info');return false;">Forgot Password?</a>
+                                <a href="forgot_password.php" class="forgot">Forgot Password?</a>
                             </div>
                             <button type="submit" class="submit-btn" id="loginBtn">LOGIN NOW<div class="spin"><span class="sdot"></span><span class="sdot"></span><span class="sdot"></span></div><div class="chk-icon"><i class="fas fa-check" style="color:#fff;font-size:18px"></i></div></button>
                         </form>

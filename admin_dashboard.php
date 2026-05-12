@@ -73,7 +73,8 @@ try {
         FROM tbl_personal_info p
         LEFT JOIN tbl_users u ON p.user_id = u.user_id
         LEFT JOIN tbl_requirements r ON p.user_id = r.user_id
-        GROUP BY p.info_id, p.user_id, p.firstname, p.lastname, p.birthday, p.gender, 
+        WHERE COALESCE(p.app_status, 'pending') != 'draft'
+        GROUP BY p.info_id, p.user_id, p.firstname, p.lastname, p.birthday, p.gender,
             p.contact_no, p.email_add, p.home_address, p.guardian_fullname, 
             p.guardian_contact_no, p.occupation, p.income, p.school, p.year_level, 
             p.course, p.gwa, p.app_status,
