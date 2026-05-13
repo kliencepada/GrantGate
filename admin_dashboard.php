@@ -208,15 +208,38 @@ try {
         .filter-btn:hover{border-color:var(--green);color:var(--green)}
         .filter-btn.active{background:var(--green);border-color:var(--green);color:#fff;box-shadow:0 4px 16px var(--green-glow)}
 
-        .search-box{position:relative;margin-bottom:24px}
-        .search-box input{
-            width:100%;padding:14px 18px 14px 46px;
+        .search-wrapper{margin-bottom:24px}
+        .search-box.enhanced{position:relative;display:flex;align-items:center}
+        .search-box.enhanced input{
+            width:100%;padding:14px 80px 14px 46px;
             background:var(--input-bg);border:1.5px solid var(--input-border);
             border-radius:12px;color:var(--fg);font-family:'Poppins',sans-serif;font-size:14px;
             outline:none;transition:all 0.3s;
         }
-        .search-box input:focus{border-color:var(--green);box-shadow:0 0 0 3px var(--input-focus)}
-        .search-box i{position:absolute;left:16px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:15px}
+        .search-box.enhanced input:focus{border-color:var(--green);box-shadow:0 0 0 3px var(--input-focus)}
+        .search-box.enhanced i.fa-search{position:absolute;left:16px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:15px;pointer-events:none}
+        
+        .search-clear{position:absolute;right:52px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--muted);cursor:pointer;font-size:13px;padding:4px;display:none;transition:color 0.2s}
+        .search-clear:hover{color:var(--fg)}
+        .search-clear.visible{display:block}
+        .search-shortcut{position:absolute;right:12px;top:50%;transform:translateY(-50%);background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:6px;padding:2px 8px;font-size:11px;color:var(--muted);font-family:'Orbitron',sans-serif;pointer-events:none;transition:opacity 0.3s}
+        .search-shortcut.hidden{opacity:0}
+
+        .search-tags{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+        .search-tag{display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border-radius:20px;font-size:11px;font-weight:600;cursor:pointer;transition:all 0.3s}
+        .search-tag.name{background:rgba(96,165,250,0.12);color:#60a5fa;border:1px solid rgba(96,165,250,0.2)}
+        .search-tag.email{background:rgba(0,200,83,0.12);color:var(--green);border:1px solid rgba(0,200,83,0.2)}
+        .search-tag.school{background:rgba(255,201,60,0.12);color:var(--warning);border:1px solid rgba(255,201,60,0.2)}
+        .search-tag.course{background:rgba(168,85,247,0.12);color:#c084fc;border:1px solid rgba(168,85,247,0.2)}
+        .search-tag.status{background:rgba(255,71,87,0.12);color:var(--danger);border:1px solid rgba(255,71,87,0.2)}
+        .search-tag:hover{filter:brightness(1.3)}
+        .search-tag i{font-size:9px}
+
+        .search-meta{font-size:12px;color:var(--muted);margin-top:8px;display:flex;align-items:center;gap:6px}
+        .search-meta i{color:var(--green);font-size:10px}
+        .search-meta strong{color:var(--fg);font-weight:600}
+
+        .highlight-match{background:rgba(0,200,83,0.25);color:#fff;border-radius:3px;padding:0 2px}
 
         .table-card{
             background:var(--card-bg);backdrop-filter:blur(20px);
@@ -528,10 +551,18 @@ try {
             </div>
         </div>
 
-        <div class="search-box">
-            <i class="fas fa-search"></i>
-            <input type="text" id="searchInput" placeholder="Search by name, email, or school..." oninput="searchTable()">
-        </div>
+        <div class="search-wrapper">
+    <div class="search-box enhanced">
+        <i class="fas fa-search"></i>
+        <input type="text" id="searchInput" placeholder="Search applicants... (Ctrl+K)" oninput="searchTable()">
+        <button class="search-clear" id="searchClear" onclick="clearSearch()" title="Clear search">
+            <i class="fas fa-times"></i>
+        </button>
+        <div class="search-shortcut" id="searchShortcut">⌘K</div>
+    </div>
+    <div class="search-tags" id="searchTags"></div>
+    <div class="search-meta" id="searchMeta"></div>
+</div>
 
         <div class="table-card">
             <table class="data-table">
@@ -740,13 +771,218 @@ try {
             }).join('');
         }
 
+        // ── SEARCH ENHANCEMENTS ──
+
+        // Keyboard shortcut: Ctrl+K or Cmd+K to focus search
+        document.addEventListener('keydown', function(e) {
+            if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+                e.preventDefault();
+                document.getElementById('searchInput').focus();
+            }
+            if (e.key === 'Escape') {
+                const input = document.getElementById('searchInput');
+                if (document.activeElement === input) {
+                    clearSearch();
+                    input.blur();
+                }
+            }
+        });
+
+        // Show/hide clear button and shortcut hint
+        document.getElementById('searchInput').addEventListener('input', function() {
+            const clearBtn = document.getElementById('searchClear');
+            const shortcut = document.getElementById('searchShortcut');
+            if (this.value.length > 0) {
+                clearBtn.classList.add('visible');
+                shortcut.classList.add('hidden');
+            } else {
+                clearBtn.classList.remove('visible');
+                shortcut.classList.remove('hidden');
+            }
+        });
+
+        function clearSearch() {
+            const input = document.getElementById('searchInput');
+            input.value = '';
+            document.getElementById('searchClear').classList.remove('visible');
+            document.getElementById('searchShortcut').classList.remove('hidden');
+            searchTable();
+            input.focus();
+        }
+
+        // Parse advanced search: prefix:term (e.g., school:ust, status:pending, course:cs)
+        function parseSearch(query) {
+            const result = { text: '', fields: {} };
+            const tokens = query.match(/(?:\w+):"[^"]*"|(?:\w+):[^\s]+|\S+/g) || [];
+
+            tokens.forEach(token => {
+                const colonIdx = token.indexOf(':');
+                if (colonIdx > 0) {
+                    const key   = token.substring(0, colonIdx).toLowerCase();
+                    const value = token.substring(colonIdx + 1).replace(/^"|"$/g, '');
+                    result.fields[key] = value;
+                } else {
+                    result.text += (result.text ? ' ' : '') + token;
+                }
+            });
+
+            return result;
+        }
+
+        // Build quick-filter tags
+        function updateSearchTags() {
+            const container = document.getElementById('searchTags');
+            const tags = [
+                { label: 'Pending',  type: 'status', query: 'status:pending' },
+                { label: 'Approved', type: 'status', query: 'status:approved' },
+                { label: 'Rejected', type: 'status', query: 'status:rejected' },
+                { label: 'By Name',  type: 'name',   query: 'name:' },
+                { label: 'By School',type: 'school', query: 'school:' },
+                { label: 'By Course',type: 'course', query: 'course:' },
+            ];
+            container.innerHTML = tags.map(t =>
+                '<span class="search-tag ' + t.type + '" onclick="insertSearchTag(\'' + t.query + '\')">' +
+                t.label + ' <i class="fas fa-plus"></i></span>'
+            ).join('');
+        }
+
+        function insertSearchTag(prefix) {
+            const input = document.getElementById('searchInput');
+            if (prefix.endsWith(':')) {
+                const before = input.value.trim();
+                input.value = (before ? before + ' ' : '') + prefix;
+                input.focus();
+                input.setSelectionRange(input.value.length, input.value.length);
+            } else {
+                const before = input.value.replace(/\b(status|name|school|course|email):\w*\s*/g, '').trim();
+                input.value = (before ? before + ' ' : '') + prefix;
+                searchTable();
+            }
+            input.dispatchEvent(new Event('input'));
+        }
+
+        // Highlight matching text
+        function highlightText(text, query) {
+            if (!query || query.length < 2) return text;
+            const escaped = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            const regex = new RegExp('(' + escaped + ')', 'gi');
+            return text.replace(regex, '<span class="highlight-match">$1</span>');
+        }
+
         function filterTable(status, btn) {
             currentFilter = status;
             document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
             renderTable();
         }
+
         function searchTable() { renderTable(); }
+
+        function renderTable() {
+            const tbody  = document.getElementById('tableBody');
+            const raw    = document.getElementById('searchInput').value;
+            const parsed = parseSearch(raw.toLowerCase());
+            const search = parsed.text;
+
+            let filtered = applicants;
+
+            // Status filter (from filter buttons)
+            if (currentFilter !== 'all') {
+                filtered = filtered.filter(a => a.app_status === currentFilter);
+            }
+
+            // Advanced field filters
+            if (parsed.fields.status) {
+                filtered = filtered.filter(a =>
+                    (a.app_status || 'pending').toLowerCase().includes(parsed.fields.status)
+                );
+            }
+            if (parsed.fields.name) {
+                filtered = filtered.filter(a =>
+                    (a.firstname + ' ' + a.lastname).toLowerCase().includes(parsed.fields.name)
+                );
+            }
+            if (parsed.fields.school) {
+                filtered = filtered.filter(a =>
+                    a.school.toLowerCase().includes(parsed.fields.school)
+                );
+            }
+            if (parsed.fields.course) {
+                filtered = filtered.filter(a =>
+                    a.course.toLowerCase().includes(parsed.fields.course)
+                );
+            }
+            if (parsed.fields.email) {
+                filtered = filtered.filter(a =>
+                    a.email_add.toLowerCase().includes(parsed.fields.email)
+                );
+            }
+
+            // General text search (searches across all key fields)
+            if (search) {
+                filtered = filtered.filter(a =>
+                    (a.firstname + ' ' + a.lastname).toLowerCase().includes(search) ||
+                    a.email_add.toLowerCase().includes(search) ||
+                    a.school.toLowerCase().includes(search) ||
+                    a.course.toLowerCase().includes(search) ||
+                    (a.contact_no || '').toLowerCase().includes(search) ||
+                    (a.home_address || '').toLowerCase().includes(search) ||
+                    (a.guardian_fullname || '').toLowerCase().includes(search) ||
+                    (a.year_level || '').toLowerCase().includes(search)
+                );
+            }
+
+            // Update search meta (result count)
+            const meta = document.getElementById('searchMeta');
+            if (raw.trim()) {
+                meta.innerHTML = '<i class="fas fa-filter"></i> Showing <strong>' + filtered.length + '</strong> of ' + applicants.length + ' applicants';
+            } else {
+                meta.innerHTML = '';
+            }
+
+            if (filtered.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:40px;color:var(--muted)">' +
+                    '<i class="fas fa-search" style="font-size:32px;display:block;margin-bottom:12px;opacity:0.3"></i>' +
+                    'No applicants match your search.<br>' +
+                    '<span style="font-size:12px;opacity:0.6">Try: <code style="background:rgba(255,255,255,0.06);padding:2px 6px;border-radius:4px">status:pending</code> or <code style="background:rgba(255,255,255,0.06);padding:2px 6px;border-radius:4px">school:ust</code></span>' +
+                    '</td></tr>';
+                return;
+            }
+
+            const statusBadge = {
+                pending:  '<span class="badge pending"><i class="fas fa-clock"></i> Pending</span>',
+                approved: '<span class="badge approved"><i class="fas fa-check"></i> Approved</span>',
+                rejected: '<span class="badge rejected"><i class="fas fa-times"></i> Rejected</span>'
+            };
+
+            const hl = search || parsed.fields.name || parsed.fields.school || parsed.fields.course || parsed.fields.email || '';
+
+            tbody.innerHTML = filtered.map(a => {
+                const status = a.app_status || 'pending';
+                const dateApplied = a.created_at ? new Date(a.created_at).toISOString().split('T')[0] : 'N/A';
+
+                const displayName = hl ? highlightText(a.firstname + ' ' + a.lastname, hl) : a.firstname + ' ' + a.lastname;
+                const displayEmail = hl ? highlightText(a.email_add, hl || parsed.fields.email) : a.email_add;
+                const displaySchool = hl ? highlightText(a.school, hl || parsed.fields.school) : a.school;
+                const displayCourse = hl ? highlightText(a.course, hl || parsed.fields.course) : a.course;
+
+                const actions =
+                    '<div class="action-group">' +
+                    '<button class="action-btn view" onclick="viewApplicant('+a.user_id+')" title="View"><i class="fas fa-eye"></i></button>' +
+                    '<button class="action-btn approve" onclick="updateStatus('+a.user_id+',\'approved\')" title="Approve"><i class="fas fa-check"></i></button>' +
+                    '<button class="action-btn reject" onclick="updateStatus('+a.user_id+',\'rejected\')" title="Reject"><i class="fas fa-times"></i></button>' +
+                    '<button class="action-btn delete" onclick="deleteApplicant('+a.user_id+')" title="Delete"><i class="fas fa-trash-alt"></i></button>' +
+                    '</div>';
+
+                return '<tr data-status="'+status+'">' +
+                    '<td><div class="applicant-name">'+displayName+'</div><div class="applicant-email">'+displayEmail+'</div></td>' +
+                    '<td>'+displaySchool+'<br><span style="font-size:12px;color:var(--muted)">'+displayCourse+' · '+a.year_level+'</span></td>' +
+                    '<td>'+dateApplied+'</td>' +
+                    '<td>'+statusBadge[status]+'</td>' +
+                    '<td>'+actions+'</td>' +
+                    '</tr>';
+            }).join('');
+        }
 
         function updateStatus(id, newStatus) {
             fetch('admin_dashboard.php', {
@@ -894,6 +1130,7 @@ try {
             setTimeout(()=>{t.classList.add('out');t.addEventListener('animationend',()=>t.remove())},3500);
         }
 
+        updateSearchTags();
         updateDashboard();
     </script>
 </body>
